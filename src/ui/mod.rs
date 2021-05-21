@@ -1,5 +1,7 @@
+mod gui;
 mod tui;
 
+pub use gui::Gui;
 pub use tui::Tui;
 
 pub trait Ui {

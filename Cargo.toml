@@ -20,3 +20,4 @@ include = [
 anyhow = "1.0"
 image = "0.23"
 crossterm = "0.19"
+minifb = "0.19"
