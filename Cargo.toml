@@ -17,6 +17,9 @@ include = [
 ]
 
 [dependencies]
+anyhow = "1.0"
+image = "0.23"
+crossterm = "0.19"
 
 [[bin]]
 name = "nest"
