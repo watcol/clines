@@ -1,6 +1,6 @@
 use std::io::{stderr, BufWriter, Stderr, Write};
 
-use crate::Display;
+use super::Ui;
 use crossterm::{
     cursor::{Hide, MoveTo, RestorePosition, SavePosition, Show},
     execute, queue,
@@ -18,8 +18,10 @@ impl Tui {
         execute!(buf, EnterAlternateScreen, Hide, SavePosition)?;
         Ok(Self { buf })
     }
+}
 
-    pub fn flush(&mut self, display: &Display) -> anyhow::Result<()> {
+impl Ui for Tui {
+    fn flush(&mut self, display: &crate::Display) -> anyhow::Result<()> {
         let (winwidth, winheight) = terminal::size()?;
         let width = display.width();
         let height = display.height();
