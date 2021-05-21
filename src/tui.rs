@@ -8,11 +8,11 @@ use crossterm::{
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
 };
 
-pub struct TUI {
+pub struct Tui {
     buf: BufWriter<Stderr>,
 }
 
-impl TUI {
+impl Tui {
     pub fn new() -> anyhow::Result<Self> {
         let mut buf = BufWriter::new(stderr());
         execute!(buf, EnterAlternateScreen, Hide, SavePosition)?;
@@ -82,7 +82,7 @@ impl TUI {
     }
 }
 
-impl Drop for TUI {
+impl Drop for Tui {
     fn drop(&mut self) {
         execute!(self.buf, LeaveAlternateScreen, Show, RestorePosition).unwrap();
     }
