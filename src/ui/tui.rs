@@ -22,11 +22,11 @@ impl Tui {
 
 impl Ui for Tui {
     fn flush(&mut self, display: &crate::Display) -> anyhow::Result<()> {
+        let (winwidth, winheight) = terminal::size()?;
         let width = display.width();
         let height = display.height();
         let width16 = width as u16;
         let height16 = (height / 2) as u16;
-        let (winwidth, winheight) = terminal::size()?;
         let initial_width = if winwidth > width16 {
             (winwidth - width16) / 2
         } else {
