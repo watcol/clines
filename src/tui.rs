@@ -49,7 +49,7 @@ impl Tui {
                         SetForegroundColor(Color::Rgb {
                             r: px1.0[0],
                             g: px1.0[1],
-                            b: px1.0[2]
+                            b: px1.0[2],
                         })
                     )?;
                 }
@@ -61,7 +61,7 @@ impl Tui {
                         SetBackgroundColor(Color::Rgb {
                             r: px2.0[0],
                             g: px2.0[1],
-                            b: px2.0[2]
+                            b: px2.0[2],
                         })
                     )?;
                 }
