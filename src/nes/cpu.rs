@@ -1,12 +1,12 @@
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Cpu {
-    reg: Register,
-    mem: [u8; 0x10000],
+    reg: Registers,
+    mem: [u8; 0x10000], // TODO: Add Structure
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[allow(non_snake_case)]
-pub struct Register {
+pub struct Registers {
     A: u8,
     X: u8,
     Y: u8,
@@ -28,1555 +28,1556 @@ pub struct Status {
 }
 
 #[allow(dead_code)]
-pub static OPCODES: [Instruction; 0x100] = [
+pub static OPCODES: [Opecode; 0x100] = [
     // 0x00
-    Instruction {
-        kind: InstKind::BRK,
+    Opecode {
+        kind: Instruction::BRK,
         addr: Addressing::Implied,
         cycle: 7,
     },
     // 0x01
-    Instruction {
-        kind: InstKind::ORA,
+    Opecode {
+        kind: Instruction::ORA,
         addr: Addressing::XIndirect,
         cycle: 6,
     },
     // 0x02 (undocumented)
-    Instruction {
-        kind: InstKind::KIL,
+    Opecode {
+        kind: Instruction::KIL,
         addr: Addressing::Implied,
         cycle: 0,
     },
     // 0x03 (undocumented)
-    Instruction {
-        kind: InstKind::SLO,
+    Opecode {
+        kind: Instruction::SLO,
         addr: Addressing::XIndirect,
         cycle: 8,
     },
     // 0x04 (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::ZeroPage,
         cycle: 3,
     },
     // 0x05
-    Instruction {
-        kind: InstKind::ORA,
+    Opecode {
+        kind: Instruction::ORA,
         addr: Addressing::ZeroPage,
         cycle: 3,
     },
     // 0x06
-    Instruction {
-        kind: InstKind::ASL,
+    Opecode {
+        kind: Instruction::ASL,
         addr: Addressing::ZeroPage,
         cycle: 5,
     },
     // 0x07 (undocumented)
-    Instruction {
-        kind: InstKind::SLO,
+    Opecode {
+        kind: Instruction::SLO,
         addr: Addressing::ZeroPage,
         cycle: 5,
     },
     // 0x08
-    Instruction {
-        kind: InstKind::PHP,
+    Opecode {
+        kind: Instruction::PHP,
         addr: Addressing::Implied,
         cycle: 3,
     },
     // 0x09
-    Instruction {
-        kind: InstKind::ORA,
+    Opecode {
+        kind: Instruction::ORA,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0x0a
-    Instruction {
-        kind: InstKind::ASL,
+    Opecode {
+        kind: Instruction::ASL,
         addr: Addressing::Accumulator,
         cycle: 2,
     },
     // 0x0b (undocumented)
-    Instruction {
-        kind: InstKind::ANC,
+    Opecode {
+        kind: Instruction::ANC,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0x0c (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::Absolute,
         cycle: 4,
     },
     // 0x0d
-    Instruction {
-        kind: InstKind::ORA,
+    Opecode {
+        kind: Instruction::ORA,
         addr: Addressing::Absolute,
         cycle: 4,
     },
     // 0x0e
-    Instruction {
-        kind: InstKind::ASL,
+    Opecode {
+        kind: Instruction::ASL,
         addr: Addressing::Absolute,
         cycle: 6,
     },
     // 0x0f (undocumented)
-    Instruction {
-        kind: InstKind::SLO,
+    Opecode {
+        kind: Instruction::SLO,
         addr: Addressing::Absolute,
         cycle: 6,
     },
     // 0x10
-    Instruction {
-        kind: InstKind::BPL,
+    Opecode {
+        kind: Instruction::BPL,
         addr: Addressing::Relative,
         cycle: 2,
     },
     // 0x11
-    Instruction {
-        kind: InstKind::ORA,
+    Opecode {
+        kind: Instruction::ORA,
         addr: Addressing::IndirectY,
         cycle: 5,
     },
     // 0x12 (undocumented)
-    Instruction {
-        kind: InstKind::KIL,
+    Opecode {
+        kind: Instruction::KIL,
         addr: Addressing::Implied,
         cycle: 0,
     },
     // 0x13 (undocumented)
-    Instruction {
-        kind: InstKind::SLO,
+    Opecode {
+        kind: Instruction::SLO,
         addr: Addressing::IndirectY,
         cycle: 8,
     },
     // 0x14 (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::ZeroPageX,
         cycle: 4,
     },
     // 0x15
-    Instruction {
-        kind: InstKind::ORA,
+    Opecode {
+        kind: Instruction::ORA,
         addr: Addressing::ZeroPageX,
         cycle: 4,
     },
     // 0x16
-    Instruction {
-        kind: InstKind::ASL,
+    Opecode {
+        kind: Instruction::ASL,
         addr: Addressing::ZeroPageX,
         cycle: 4,
     },
     // 0x17 (undocumented)
-    Instruction {
-        kind: InstKind::SLO,
+    Opecode {
+        kind: Instruction::SLO,
         addr: Addressing::ZeroPageX,
         cycle: 0,
     },
     // 0x18
-    Instruction {
-        kind: InstKind::CLC,
+    Opecode {
+        kind: Instruction::CLC,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0x19
-    Instruction {
-        kind: InstKind::ORA,
+    Opecode {
+        kind: Instruction::ORA,
         addr: Addressing::AbsoluteY,
         cycle: 4,
     },
     // 0x1a (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0x1b (undocumented)
-    Instruction {
-        kind: InstKind::SLO,
+    Opecode {
+        kind: Instruction::SLO,
         addr: Addressing::AbsoluteY,
         cycle: 0,
     },
     // 0x1c (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::AbsoluteX,
         cycle: 4,
     },
     // 0x1d
-    Instruction {
-        kind: InstKind::ORA,
+    Opecode {
+        kind: Instruction::ORA,
         addr: Addressing::AbsoluteX,
         cycle: 4,
     },
     // 0x1e
-    Instruction {
-        kind: InstKind::ASL,
+    Opecode {
+        kind: Instruction::ASL,
         addr: Addressing::AbsoluteX,
         cycle: 7,
     },
     // 0x1f (undocumented)
-    Instruction {
-        kind: InstKind::SLO,
+    Opecode {
+        kind: Instruction::SLO,
         addr: Addressing::AbsoluteX,
         cycle: 0,
     },
     // 0x20
-    Instruction {
-        kind: InstKind::JSR,
+    Opecode {
+        kind: Instruction::JSR,
         addr: Addressing::Absolute,
         cycle: 6,
     },
     // 0x21
-    Instruction {
-        kind: InstKind::AND,
+    Opecode {
+        kind: Instruction::AND,
         addr: Addressing::XIndirect,
         cycle: 6,
     },
     // 0x22 (undocumented)
-    Instruction {
-        kind: InstKind::KIL,
+    Opecode {
+        kind: Instruction::KIL,
         addr: Addressing::Implied,
         cycle: 0,
     },
     // 0x23 (undocumented)
-    Instruction {
-        kind: InstKind::RLA,
+    Opecode {
+        kind: Instruction::RLA,
         addr: Addressing::XIndirect,
         cycle: 8,
     },
     // 0x24
-    Instruction {
-        kind: InstKind::BIT,
+    Opecode {
+        kind: Instruction::BIT,
         addr: Addressing::ZeroPage,
         cycle: 3,
     },
     // 0x25
-    Instruction {
-        kind: InstKind::AND,
+    Opecode {
+        kind: Instruction::AND,
         addr: Addressing::ZeroPage,
         cycle: 3,
     },
     // 0x26
-    Instruction {
-        kind: InstKind::ROL,
+    Opecode {
+        kind: Instruction::ROL,
         addr: Addressing::ZeroPage,
         cycle: 5,
     },
     // 0x27 (undocumented)
-    Instruction {
-        kind: InstKind::RLA,
+    Opecode {
+        kind: Instruction::RLA,
         addr: Addressing::ZeroPage,
         cycle: 5,
     },
     // 0x28
-    Instruction {
-        kind: InstKind::PLP,
+    Opecode {
+        kind: Instruction::PLP,
         addr: Addressing::Implied,
         cycle: 4,
     },
     // 0x29
-    Instruction {
-        kind: InstKind::AND,
+    Opecode {
+        kind: Instruction::AND,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0x2a
-    Instruction {
-        kind: InstKind::ROL,
+    Opecode {
+        kind: Instruction::ROL,
         addr: Addressing::Accumulator,
         cycle: 2,
     },
     // 0x2b (undocumented)
-    Instruction {
-        kind: InstKind::ANC,
+    Opecode {
+        kind: Instruction::ANC,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0x2c
-    Instruction {
-        kind: InstKind::BIT,
+    Opecode {
+        kind: Instruction::BIT,
         addr: Addressing::Absolute,
         cycle: 4,
     },
     // 0x2d
-    Instruction {
-        kind: InstKind::AND,
+    Opecode {
+        kind: Instruction::AND,
         addr: Addressing::Absolute,
         cycle: 4,
     },
     // 0x2e
-    Instruction {
-        kind: InstKind::ROL,
+    Opecode {
+        kind: Instruction::ROL,
         addr: Addressing::Absolute,
         cycle: 6,
     },
     // 0x2f (undocumented)
-    Instruction {
-        kind: InstKind::RLA,
+    Opecode {
+        kind: Instruction::RLA,
         addr: Addressing::Absolute,
         cycle: 6,
     },
     // 0x30
-    Instruction {
-        kind: InstKind::BMI,
+    Opecode {
+        kind: Instruction::BMI,
         addr: Addressing::Relative,
         cycle: 2,
     },
     // 0x31
-    Instruction {
-        kind: InstKind::AND,
+    Opecode {
+        kind: Instruction::AND,
         addr: Addressing::IndirectY,
         cycle: 6,
     },
     // 0x32 (undocumented)
-    Instruction {
-        kind: InstKind::KIL,
+    Opecode {
+        kind: Instruction::KIL,
         addr: Addressing::Implied,
         cycle: 0,
     },
     // 0x33 (undocumented)
-    Instruction {
-        kind: InstKind::RLA,
+    Opecode {
+        kind: Instruction::RLA,
         addr: Addressing::IndirectY,
         cycle: 8,
     },
     // 0x34
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::ZeroPageX,
         cycle: 4,
     },
     // 0x35
-    Instruction {
-        kind: InstKind::AND,
+    Opecode {
+        kind: Instruction::AND,
         addr: Addressing::ZeroPageX,
         cycle: 4,
     },
     // 0x36
-    Instruction {
-        kind: InstKind::ROL,
+    Opecode {
+        kind: Instruction::ROL,
         addr: Addressing::ZeroPageX,
         cycle: 6,
     },
     // 0x37 (undocumented)
-    Instruction {
-        kind: InstKind::RLA,
+    Opecode {
+        kind: Instruction::RLA,
         addr: Addressing::ZeroPageX,
         cycle: 6,
     },
     // 0x38
-    Instruction {
-        kind: InstKind::SEC,
+    Opecode {
+        kind: Instruction::SEC,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0x39
-    Instruction {
-        kind: InstKind::AND,
+    Opecode {
+        kind: Instruction::AND,
         addr: Addressing::AbsoluteY,
         cycle: 4,
     },
     // 0x3a (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0x3b (undocumented)
-    Instruction {
-        kind: InstKind::RLA,
+    Opecode {
+        kind: Instruction::RLA,
         addr: Addressing::AbsoluteY,
         cycle: 7,
     },
     // 0x3c (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::AbsoluteX,
         cycle: 4,
     },
     // 0x3d
-    Instruction {
-        kind: InstKind::AND,
+    Opecode {
+        kind: Instruction::AND,
         addr: Addressing::AbsoluteX,
         cycle: 4,
     },
     // 0x3e
-    Instruction {
-        kind: InstKind::ROL,
+    Opecode {
+        kind: Instruction::ROL,
         addr: Addressing::Absolute,
         cycle: 7,
     },
     // 0x3f (undocumented)
-    Instruction {
-        kind: InstKind::RLA,
+    Opecode {
+        kind: Instruction::RLA,
         addr: Addressing::AbsoluteX,
         cycle: 7,
     },
     // 0x40
-    Instruction {
-        kind: InstKind::RTI,
+    Opecode {
+        kind: Instruction::RTI,
         addr: Addressing::Implied,
         cycle: 6,
     },
     // 0x41
-    Instruction {
-        kind: InstKind::EOR,
+    Opecode {
+        kind: Instruction::EOR,
         addr: Addressing::XIndirect,
         cycle: 6,
     },
     // 0x42 (undocumented)
-    Instruction {
-        kind: InstKind::KIL,
+    Opecode {
+        kind: Instruction::KIL,
         addr: Addressing::Implied,
         cycle: 0,
     },
     // 0x43 (undocumented)
-    Instruction {
-        kind: InstKind::SRE,
+    Opecode {
+        kind: Instruction::SRE,
         addr: Addressing::IndirectY,
         cycle: 3,
     },
     // 0x44 (undocumented)
-    Instruction {
-        kind: InstKind::BRK,
+    Opecode {
+        kind: Instruction::BRK,
         addr: Addressing::Implied,
         cycle: 0,
     },
     // 0x45
-    Instruction {
-        kind: InstKind::EOR,
+    Opecode {
+        kind: Instruction::EOR,
         addr: Addressing::ZeroPage,
         cycle: 3,
     },
     // 0x46
-    Instruction {
-        kind: InstKind::LSR,
+    Opecode {
+        kind: Instruction::LSR,
         addr: Addressing::ZeroPage,
         cycle: 5,
     },
     // 0x47 (undocumented)
-    Instruction {
-        kind: InstKind::SRE,
+    Opecode {
+        kind: Instruction::SRE,
         addr: Addressing::ZeroPage,
         cycle: 5,
     },
     // 0x48
-    Instruction {
-        kind: InstKind::PHA,
+    Opecode {
+        kind: Instruction::PHA,
         addr: Addressing::Implied,
         cycle: 3,
     },
     // 0x49
-    Instruction {
-        kind: InstKind::EOR,
+    Opecode {
+        kind: Instruction::EOR,
         addr: Addressing::Immediate,
         cycle: 3,
     },
     // 0x4a
-    Instruction {
-        kind: InstKind::LSR,
+    Opecode {
+        kind: Instruction::LSR,
         addr: Addressing::Accumulator,
         cycle: 2,
     },
     // 0x4b (undocumented)
-    Instruction {
-        kind: InstKind::ALR,
+    Opecode {
+        kind: Instruction::ALR,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0x4c
-    Instruction {
-        kind: InstKind::JMP,
+    Opecode {
+        kind: Instruction::JMP,
         addr: Addressing::Absolute,
         cycle: 3,
     },
     // 0x4d
-    Instruction {
-        kind: InstKind::EOR,
+    Opecode {
+        kind: Instruction::EOR,
         addr: Addressing::Absolute,
         cycle: 4,
     },
     // 0x4e (undocumented)
-    Instruction {
-        kind: InstKind::LSR,
+    Opecode {
+        kind: Instruction::LSR,
         addr: Addressing::Absolute,
         cycle: 6,
     },
     // 0x4f
-    Instruction {
-        kind: InstKind::SRE,
+    Opecode {
+        kind: Instruction::SRE,
         addr: Addressing::Absolute,
         cycle: 6,
     },
     // 0x50
-    Instruction {
-        kind: InstKind::BVC,
+    Opecode {
+        kind: Instruction::BVC,
         addr: Addressing::Relative,
         cycle: 2,
     },
     // 0x51
-    Instruction {
-        kind: InstKind::EOR,
+    Opecode {
+        kind: Instruction::EOR,
         addr: Addressing::IndirectY,
         cycle: 5,
     },
     // 0x52 (undocumented)
-    Instruction {
-        kind: InstKind::KIL,
+    Opecode {
+        kind: Instruction::KIL,
         addr: Addressing::Implied,
         cycle: 0,
     },
     // 0x53 (undocumented)
-    Instruction {
-        kind: InstKind::SRE,
+    Opecode {
+        kind: Instruction::SRE,
         addr: Addressing::XIndirect,
         cycle: 8,
     },
     // 0x54 (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::ZeroPage,
         cycle: 4,
     },
     // 0x55
-    Instruction {
-        kind: InstKind::EOR,
+    Opecode {
+        kind: Instruction::EOR,
         addr: Addressing::ZeroPageX,
         cycle: 4,
     },
     // 0x56
-    Instruction {
-        kind: InstKind::LSR,
+    Opecode {
+        kind: Instruction::LSR,
         addr: Addressing::ZeroPageX,
         cycle: 6,
     },
     // 0x57 (undocumented)
-    Instruction {
-        kind: InstKind::SRE,
+    Opecode {
+        kind: Instruction::SRE,
         addr: Addressing::ZeroPageX,
         cycle: 6,
     },
     // 0x58
-    Instruction {
-        kind: InstKind::CLI,
+    Opecode {
+        kind: Instruction::CLI,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0x59
-    Instruction {
-        kind: InstKind::EOR,
+    Opecode {
+        kind: Instruction::EOR,
         addr: Addressing::AbsoluteY,
         cycle: 4,
     },
     // 0x5a (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::AbsoluteX,
         cycle: 4,
     },
     // 0x5b (undocumented)
-    Instruction {
-        kind: InstKind::SRE,
+    Opecode {
+        kind: Instruction::SRE,
         addr: Addressing::AbsoluteY,
         cycle: 7,
     },
     // 0x5c (undocumented)
-    Instruction {
-        kind: InstKind::SRE,
+    Opecode {
+        kind: Instruction::SRE,
         addr: Addressing::AbsoluteX,
         cycle: 4,
     },
     // 0x5d
-    Instruction {
-        kind: InstKind::EOR,
+    Opecode {
+        kind: Instruction::EOR,
         addr: Addressing::AbsoluteX,
         cycle: 4,
     },
     // 0x5e
-    Instruction {
-        kind: InstKind::LSR,
+    Opecode {
+        kind: Instruction::LSR,
         addr: Addressing::AbsoluteX,
         cycle: 7,
     },
     // 0x5f (undocumented)
-    Instruction {
-        kind: InstKind::SRE,
+    Opecode {
+        kind: Instruction::SRE,
         addr: Addressing::AbsoluteX,
         cycle: 7,
     },
     // 0x60
-    Instruction {
-        kind: InstKind::RTS,
+    Opecode {
+        kind: Instruction::RTS,
         addr: Addressing::Implied,
         cycle: 6,
     },
     // 0x61
-    Instruction {
-        kind: InstKind::ADC,
+    Opecode {
+        kind: Instruction::ADC,
         addr: Addressing::XIndirect,
         cycle: 6,
     },
     // 0x62 (undocumented)
-    Instruction {
-        kind: InstKind::KIL,
+    Opecode {
+        kind: Instruction::KIL,
         addr: Addressing::Implied,
         cycle: 0,
     },
     // 0x63 (undocumented)
-    Instruction {
-        kind: InstKind::RRA,
+    Opecode {
+        kind: Instruction::RRA,
         addr: Addressing::XIndirect,
         cycle: 8,
     },
     // 0x64 (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::ZeroPage,
         cycle: 3,
     },
     // 0x65
-    Instruction {
-        kind: InstKind::ADC,
+    Opecode {
+        kind: Instruction::ADC,
         addr: Addressing::ZeroPage,
         cycle: 3,
     },
     // 0x66
-    Instruction {
-        kind: InstKind::ROR,
+    Opecode {
+        kind: Instruction::ROR,
         addr: Addressing::ZeroPage,
         cycle: 5,
     },
     // 0x67 (undocumented)
-    Instruction {
-        kind: InstKind::RRA,
+    Opecode {
+        kind: Instruction::RRA,
         addr: Addressing::ZeroPage,
         cycle: 5,
     },
     // 0x68
-    Instruction {
-        kind: InstKind::PLA,
+    Opecode {
+        kind: Instruction::PLA,
         addr: Addressing::Implied,
         cycle: 4,
     },
     // 0x69
-    Instruction {
-        kind: InstKind::ADC,
+    Opecode {
+        kind: Instruction::ADC,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0x6a
-    Instruction {
-        kind: InstKind::ROR,
+    Opecode {
+        kind: Instruction::ROR,
         addr: Addressing::Accumulator,
         cycle: 2,
     },
     // 0x6b (undocumented)
-    Instruction {
-        kind: InstKind::ARR,
+    Opecode {
+        kind: Instruction::ARR,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0x6c
-    Instruction {
-        kind: InstKind::JMP,
+    Opecode {
+        kind: Instruction::JMP,
         addr: Addressing::Indirect,
         cycle: 5,
     },
     // 0x6d
-    Instruction {
-        kind: InstKind::ADC,
+    Opecode {
+        kind: Instruction::ADC,
         addr: Addressing::Absolute,
         cycle: 4,
     },
     // 0x6e
-    Instruction {
-        kind: InstKind::ROR,
+    Opecode {
+        kind: Instruction::ROR,
         addr: Addressing::Absolute,
         cycle: 6,
     },
     // 0x6f (undocumented)
-    Instruction {
-        kind: InstKind::RRA,
+    Opecode {
+        kind: Instruction::RRA,
         addr: Addressing::Absolute,
         cycle: 6,
     },
     // 0x70
-    Instruction {
-        kind: InstKind::BVS,
+    Opecode {
+        kind: Instruction::BVS,
         addr: Addressing::Relative,
         cycle: 2,
     },
     // 0x71
-    Instruction {
-        kind: InstKind::ADC,
+    Opecode {
+        kind: Instruction::ADC,
         addr: Addressing::XIndirect,
         cycle: 6,
     },
     // 0x72 (undocumented)
-    Instruction {
-        kind: InstKind::KIL,
+    Opecode {
+        kind: Instruction::KIL,
         addr: Addressing::Implied,
         cycle: 0,
     },
     // 0x73 (undocumented)
-    Instruction {
-        kind: InstKind::RRA,
+    Opecode {
+        kind: Instruction::RRA,
         addr: Addressing::IndirectY,
         cycle: 8,
     },
     // 0x74 (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::ZeroPageX,
         cycle: 4,
     },
     // 0x75
-    Instruction {
-        kind: InstKind::ADC,
+    Opecode {
+        kind: Instruction::ADC,
         addr: Addressing::ZeroPageX,
         cycle: 4,
     },
     // 0x76
-    Instruction {
-        kind: InstKind::ROR,
+    Opecode {
+        kind: Instruction::ROR,
         addr: Addressing::ZeroPageX,
         cycle: 6,
     },
     // 0x77 (undocumented)
-    Instruction {
-        kind: InstKind::RRA,
+    Opecode {
+        kind: Instruction::RRA,
         addr: Addressing::ZeroPageX,
         cycle: 6,
     },
     // 0x78
-    Instruction {
-        kind: InstKind::SEI,
+    Opecode {
+        kind: Instruction::SEI,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0x79
-    Instruction {
-        kind: InstKind::ADC,
+    Opecode {
+        kind: Instruction::ADC,
         addr: Addressing::AbsoluteY,
         cycle: 4,
     },
     // 0x7a (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0x7b (undocumented)
-    Instruction {
-        kind: InstKind::RRA,
+    Opecode {
+        kind: Instruction::RRA,
         addr: Addressing::AbsoluteY,
         cycle: 7,
     },
     // 0x7c (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::AbsoluteX,
         cycle: 4,
     },
     // 0x7d
-    Instruction {
-        kind: InstKind::ADC,
+    Opecode {
+        kind: Instruction::ADC,
         addr: Addressing::AbsoluteX,
         cycle: 4,
     },
     // 0x7e
-    Instruction {
-        kind: InstKind::ROR,
+    Opecode {
+        kind: Instruction::ROR,
         addr: Addressing::AbsoluteX,
         cycle: 7,
     },
     // 0x7f (undocumented)
-    Instruction {
-        kind: InstKind::RRA,
+    Opecode {
+        kind: Instruction::RRA,
         addr: Addressing::AbsoluteX,
         cycle: 7,
     },
     // 0x80 (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0x81
-    Instruction {
-        kind: InstKind::STA,
+    Opecode {
+        kind: Instruction::STA,
         addr: Addressing::XIndirect,
         cycle: 6,
     },
     // 0x82 (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0x83 (undocumented)
-    Instruction {
-        kind: InstKind::SAX,
+    Opecode {
+        kind: Instruction::SAX,
         addr: Addressing::XIndirect,
         cycle: 6,
     },
     // 0x84
-    Instruction {
-        kind: InstKind::STY,
+    Opecode {
+        kind: Instruction::STY,
         addr: Addressing::ZeroPage,
         cycle: 3,
     },
     // 0x85
-    Instruction {
-        kind: InstKind::STA,
+    Opecode {
+        kind: Instruction::STA,
         addr: Addressing::ZeroPage,
         cycle: 3,
     },
     // 0x86
-    Instruction {
-        kind: InstKind::STX,
+    Opecode {
+        kind: Instruction::STX,
         addr: Addressing::ZeroPage,
         cycle: 3,
     },
     // 0x87 (undocumented)
-    Instruction {
-        kind: InstKind::SAX,
+    Opecode {
+        kind: Instruction::SAX,
         addr: Addressing::ZeroPage,
         cycle: 3,
     },
     // 0x88
-    Instruction {
-        kind: InstKind::DEY,
+    Opecode {
+        kind: Instruction::DEY,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0x89 (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0x8a
-    Instruction {
-        kind: InstKind::TXA,
+    Opecode {
+        kind: Instruction::TXA,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0x8b (undocumented)
-    Instruction {
-        kind: InstKind::XAA,
+    Opecode {
+        kind: Instruction::XAA,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0x8c
-    Instruction {
-        kind: InstKind::STY,
+    Opecode {
+        kind: Instruction::STY,
         addr: Addressing::Absolute,
         cycle: 4,
     },
     // 0x8d
-    Instruction {
-        kind: InstKind::STA,
+    Opecode {
+        kind: Instruction::STA,
         addr: Addressing::Absolute,
         cycle: 4,
     },
     // 0x8e
-    Instruction {
-        kind: InstKind::STX,
+    Opecode {
+        kind: Instruction::STX,
         addr: Addressing::Absolute,
         cycle: 4,
     },
     // 0x8f (undocumented)
-    Instruction {
-        kind: InstKind::SAX,
+    Opecode {
+        kind: Instruction::SAX,
         addr: Addressing::Absolute,
         cycle: 4,
     },
     // 0x90
-    Instruction {
-        kind: InstKind::BCC,
+    Opecode {
+        kind: Instruction::BCC,
         addr: Addressing::Relative,
         cycle: 2,
     },
     // 0x91
-    Instruction {
-        kind: InstKind::STA,
+    Opecode {
+        kind: Instruction::STA,
         addr: Addressing::IndirectY,
         cycle: 6,
     },
     // 0x92 (undocumented)
-    Instruction {
-        kind: InstKind::KIL,
+    Opecode {
+        kind: Instruction::KIL,
         addr: Addressing::Implied,
         cycle: 0,
     },
     // 0x93 (undocumented)
-    Instruction {
-        kind: InstKind::AHX,
+    Opecode {
+        kind: Instruction::AHX,
         addr: Addressing::IndirectY,
         cycle: 6,
     },
     // 0x94
-    Instruction {
-        kind: InstKind::STY,
+    Opecode {
+        kind: Instruction::STY,
         addr: Addressing::ZeroPageX,
         cycle: 0,
     },
     // 0x95
-    Instruction {
-        kind: InstKind::STA,
+    Opecode {
+        kind: Instruction::STA,
         addr: Addressing::ZeroPageX,
         cycle: 4,
     },
     // 0x96
-    Instruction {
-        kind: InstKind::STX,
+    Opecode {
+        kind: Instruction::STX,
         addr: Addressing::ZeroPageY,
         cycle: 0,
     },
     // 0x97
-    Instruction {
-        kind: InstKind::SAX,
+    Opecode {
+        kind: Instruction::SAX,
         addr: Addressing::ZeroPageY,
         cycle: 4,
     },
     // 0x98
-    Instruction {
-        kind: InstKind::TYA,
+    Opecode {
+        kind: Instruction::TYA,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0x99
-    Instruction {
-        kind: InstKind::STA,
+    Opecode {
+        kind: Instruction::STA,
         addr: Addressing::AbsoluteY,
         cycle: 5,
     },
     // 0x9a
-    Instruction {
-        kind: InstKind::TXS,
+    Opecode {
+        kind: Instruction::TXS,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0x9b (undocumented)
-    Instruction {
-        kind: InstKind::TAS,
+    Opecode {
+        kind: Instruction::TAS,
         addr: Addressing::AbsoluteY,
         cycle: 5,
     },
     // 0x9c (undocumented)
-    Instruction {
-        kind: InstKind::SHY,
+    Opecode {
+        kind: Instruction::SHY,
         addr: Addressing::AbsoluteX,
         cycle: 5,
     },
     // 0x9d
-    Instruction {
-        kind: InstKind::STA,
+    Opecode {
+        kind: Instruction::STA,
         addr: Addressing::AbsoluteX,
         cycle: 5,
     },
     // 0x9e (undocumented)
-    Instruction {
-        kind: InstKind::SHX,
+    Opecode {
+        kind: Instruction::SHX,
         addr: Addressing::AbsoluteY,
         cycle: 5,
     },
     // 0x9f (undocumented)
-    Instruction {
-        kind: InstKind::AHX,
+    Opecode {
+        kind: Instruction::AHX,
         addr: Addressing::AbsoluteY,
         cycle: 5,
     },
     // 0xa0
-    Instruction {
-        kind: InstKind::LDY,
+    Opecode {
+        kind: Instruction::LDY,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0xa1
-    Instruction {
-        kind: InstKind::LDA,
+    Opecode {
+        kind: Instruction::LDA,
         addr: Addressing::XIndirect,
         cycle: 6,
     },
     // 0xa2
-    Instruction {
-        kind: InstKind::LDX,
+    Opecode {
+        kind: Instruction::LDX,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0xa3 (undocumented)
-    Instruction {
-        kind: InstKind::LAX,
+    Opecode {
+        kind: Instruction::LAX,
         addr: Addressing::XIndirect,
         cycle: 6,
     },
     // 0xa4
-    Instruction {
-        kind: InstKind::LDY,
+    Opecode {
+        kind: Instruction::LDY,
         addr: Addressing::ZeroPage,
         cycle: 3,
     },
     // 0xa5
-    Instruction {
-        kind: InstKind::LDA,
+    Opecode {
+        kind: Instruction::LDA,
         addr: Addressing::ZeroPage,
         cycle: 0,
     },
     // 0xa6
-    Instruction {
-        kind: InstKind::LDX,
+    Opecode {
+        kind: Instruction::LDX,
         addr: Addressing::ZeroPage,
         cycle: 0,
     },
     // 0xa7 (undocumented)
-    Instruction {
-        kind: InstKind::LAX,
+    Opecode {
+        kind: Instruction::LAX,
         addr: Addressing::ZeroPage,
         cycle: 2,
     },
     // 0xa8
-    Instruction {
-        kind: InstKind::TAY,
+    Opecode {
+        kind: Instruction::TAY,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0xa9
-    Instruction {
-        kind: InstKind::LDA,
+    Opecode {
+        kind: Instruction::LDA,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0xaa
-    Instruction {
-        kind: InstKind::TAX,
+    Opecode {
+        kind: Instruction::TAX,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0xab (undocumented)
-    Instruction {
-        kind: InstKind::LAX,
+    Opecode {
+        kind: Instruction::LAX,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0xac
-    Instruction {
-        kind: InstKind::LDY,
+    Opecode {
+        kind: Instruction::LDY,
         addr: Addressing::Absolute,
         cycle: 4,
     },
     // 0xad
-    Instruction {
-        kind: InstKind::LDA,
+    Opecode {
+        kind: Instruction::LDA,
         addr: Addressing::Absolute,
         cycle: 4,
     },
     // 0xae
-    Instruction {
-        kind: InstKind::LDX,
+    Opecode {
+        kind: Instruction::LDX,
         addr: Addressing::Absolute,
         cycle: 4,
     },
     // 0xaf (undocumented)
-    Instruction {
-        kind: InstKind::LAX,
+    Opecode {
+        kind: Instruction::LAX,
         addr: Addressing::Absolute,
         cycle: 4,
     },
     // 0xb0
-    Instruction {
-        kind: InstKind::BCS,
+    Opecode {
+        kind: Instruction::BCS,
         addr: Addressing::Relative,
         cycle: 2,
     },
     // 0xb1
-    Instruction {
-        kind: InstKind::LDA,
+    Opecode {
+        kind: Instruction::LDA,
         addr: Addressing::IndirectY,
         cycle: 5,
     },
     // 0xb2 (undocumented)
-    Instruction {
-        kind: InstKind::KIL,
+    Opecode {
+        kind: Instruction::KIL,
         addr: Addressing::Implied,
         cycle: 0,
     },
     // 0xb3 (undocumented)
-    Instruction {
-        kind: InstKind::LAX,
+    Opecode {
+        kind: Instruction::LAX,
         addr: Addressing::IndirectY,
         cycle: 5,
     },
     // 0xb4
-    Instruction {
-        kind: InstKind::LDY,
+    Opecode {
+        kind: Instruction::LDY,
         addr: Addressing::ZeroPageX,
         cycle: 4,
     },
     // 0xb5
-    Instruction {
-        kind: InstKind::LDA,
+    Opecode {
+        kind: Instruction::LDA,
         addr: Addressing::ZeroPageX,
         cycle: 4,
     },
     // 0xb6
-    Instruction {
-        kind: InstKind::LDX,
+    Opecode {
+        kind: Instruction::LDX,
         addr: Addressing::ZeroPageY,
         cycle: 4,
     },
     // 0xb7 (undocumented)
-    Instruction {
-        kind: InstKind::LAX,
+    Opecode {
+        kind: Instruction::LAX,
         addr: Addressing::ZeroPageY,
         cycle: 4,
     },
     // 0xb8
-    Instruction {
-        kind: InstKind::CLV,
+    Opecode {
+        kind: Instruction::CLV,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0xb9
-    Instruction {
-        kind: InstKind::LDA,
+    Opecode {
+        kind: Instruction::LDA,
         addr: Addressing::AbsoluteY,
         cycle: 4,
     },
     // 0xba
-    Instruction {
-        kind: InstKind::TSX,
+    Opecode {
+        kind: Instruction::TSX,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0xbb (undocumented)
-    Instruction {
-        kind: InstKind::LAS,
+    Opecode {
+        kind: Instruction::LAS,
         addr: Addressing::AbsoluteY,
         cycle: 0,
     },
     // 0xbc
-    Instruction {
-        kind: InstKind::LDY,
+    Opecode {
+        kind: Instruction::LDY,
         addr: Addressing::AbsoluteX,
         cycle: 4,
     },
     // 0xbd
-    Instruction {
-        kind: InstKind::LDA,
+    Opecode {
+        kind: Instruction::LDA,
         addr: Addressing::AbsoluteX,
         cycle: 4,
     },
     // 0xbe
-    Instruction {
-        kind: InstKind::LDX,
+    Opecode {
+        kind: Instruction::LDX,
         addr: Addressing::AbsoluteY,
         cycle: 4,
     },
     // 0xbf (undocumented)
-    Instruction {
-        kind: InstKind::LAX,
+    Opecode {
+        kind: Instruction::LAX,
         addr: Addressing::AbsoluteY,
         cycle: 4,
     },
     // 0xc0
-    Instruction {
-        kind: InstKind::CPY,
+    Opecode {
+        kind: Instruction::CPY,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0xc1
-    Instruction {
-        kind: InstKind::CMP,
+    Opecode {
+        kind: Instruction::CMP,
         addr: Addressing::XIndirect,
         cycle: 6,
     },
     // 0xc2 (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::Immediate,
         cycle: 6,
     },
     // 0xc3 (undocumented)
-    Instruction {
-        kind: InstKind::DCP,
+    Opecode {
+        kind: Instruction::DCP,
         addr: Addressing::XIndirect,
         cycle: 8,
     },
     // 0xc4
-    Instruction {
-        kind: InstKind::CPY,
+    Opecode {
+        kind: Instruction::CPY,
         addr: Addressing::ZeroPage,
         cycle: 3,
     },
     // 0xc5
-    Instruction {
-        kind: InstKind::CMP,
+    Opecode {
+        kind: Instruction::CMP,
         addr: Addressing::ZeroPage,
         cycle: 3,
     },
     // 0xc6
-    Instruction {
-        kind: InstKind::DEC,
+    Opecode {
+        kind: Instruction::DEC,
         addr: Addressing::ZeroPage,
         cycle: 5,
     },
     // 0xc7 (undocumented)
-    Instruction {
-        kind: InstKind::DCP,
+    Opecode {
+        kind: Instruction::DCP,
         addr: Addressing::ZeroPage,
         cycle: 5,
     },
     // 0xc8
-    Instruction {
-        kind: InstKind::INY,
+    Opecode {
+        kind: Instruction::INY,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0xc9
-    Instruction {
-        kind: InstKind::CMP,
+    Opecode {
+        kind: Instruction::CMP,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0xca
-    Instruction {
-        kind: InstKind::DEX,
+    Opecode {
+        kind: Instruction::DEX,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0xcb (undocumented)
-    Instruction {
-        kind: InstKind::AXS,
+    Opecode {
+        kind: Instruction::AXS,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0xcc
-    Instruction {
-        kind: InstKind::CPY,
+    Opecode {
+        kind: Instruction::CPY,
         addr: Addressing::Absolute,
         cycle: 4,
     },
     // 0xcd
-    Instruction {
-        kind: InstKind::CMP,
+    Opecode {
+        kind: Instruction::CMP,
         addr: Addressing::Absolute,
         cycle: 4,
     },
     // 0xce
-    Instruction {
-        kind: InstKind::DEC,
+    Opecode {
+        kind: Instruction::DEC,
         addr: Addressing::Absolute,
         cycle: 6,
     },
     // 0xcf (undocumented)
-    Instruction {
-        kind: InstKind::DCP,
+    Opecode {
+        kind: Instruction::DCP,
         addr: Addressing::Absolute,
         cycle: 6,
     },
     // 0xd0
-    Instruction {
-        kind: InstKind::BNE,
+    Opecode {
+        kind: Instruction::BNE,
         addr: Addressing::Relative,
         cycle: 2,
     },
     // 0xd1
-    Instruction {
-        kind: InstKind::CMP,
+    Opecode {
+        kind: Instruction::CMP,
         addr: Addressing::IndirectY,
         cycle: 5,
     },
     // 0xd2 (undocumented)
-    Instruction {
-        kind: InstKind::KIL,
+    Opecode {
+        kind: Instruction::KIL,
         addr: Addressing::Implied,
         cycle: 0,
     },
     // 0xd3 (undocumented)
-    Instruction {
-        kind: InstKind::DCP,
+    Opecode {
+        kind: Instruction::DCP,
         addr: Addressing::IndirectY,
         cycle: 0,
     },
     // 0xd4 (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::ZeroPageX,
         cycle: 4,
     },
     // 0xd5
-    Instruction {
-        kind: InstKind::CMP,
+    Opecode {
+        kind: Instruction::CMP,
         addr: Addressing::ZeroPageX,
         cycle: 4,
     },
     // 0xd6
-    Instruction {
-        kind: InstKind::DEC,
+    Opecode {
+        kind: Instruction::DEC,
         addr: Addressing::ZeroPageX,
         cycle: 6,
     },
     // 0xd7 (undocumented)
-    Instruction {
-        kind: InstKind::DCP,
+    Opecode {
+        kind: Instruction::DCP,
         addr: Addressing::ZeroPage,
         cycle: 6,
     },
     // 0xd8
-    Instruction {
-        kind: InstKind::CLD,
+    Opecode {
+        kind: Instruction::CLD,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0xd9
-    Instruction {
-        kind: InstKind::CMP,
+    Opecode {
+        kind: Instruction::CMP,
         addr: Addressing::AbsoluteY,
         cycle: 4,
     },
     // 0xda (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0xdb (undocumented)
-    Instruction {
-        kind: InstKind::DCP,
+    Opecode {
+        kind: Instruction::DCP,
         addr: Addressing::AbsoluteY,
         cycle: 7,
     },
     // 0xdc (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::AbsoluteX,
         cycle: 4,
     },
     // 0xdd
-    Instruction {
-        kind: InstKind::CMP,
+    Opecode {
+        kind: Instruction::CMP,
         addr: Addressing::AbsoluteX,
         cycle: 4,
     },
     // 0xde
-    Instruction {
-        kind: InstKind::DEC,
+    Opecode {
+        kind: Instruction::DEC,
         addr: Addressing::AbsoluteX,
         cycle: 7,
     },
     // 0xdf (undocumented)
-    Instruction {
-        kind: InstKind::DCP,
+    Opecode {
+        kind: Instruction::DCP,
         addr: Addressing::AbsoluteX,
         cycle: 7,
     },
     // 0xe0
-    Instruction {
-        kind: InstKind::CPX,
+    Opecode {
+        kind: Instruction::CPX,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0xe1
-    Instruction {
-        kind: InstKind::SBC,
+    Opecode {
+        kind: Instruction::SBC,
         addr: Addressing::XIndirect,
         cycle: 6,
     },
     // 0xe2 (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0xe3 (undocumented)
-    Instruction {
-        kind: InstKind::ISC,
+    Opecode {
+        kind: Instruction::ISC,
         addr: Addressing::XIndirect,
         cycle: 8,
     },
     // 0xe4
-    Instruction {
-        kind: InstKind::CPX,
+    Opecode {
+        kind: Instruction::CPX,
         addr: Addressing::ZeroPage,
         cycle: 3,
     },
     // 0xe5
-    Instruction {
-        kind: InstKind::SBC,
+    Opecode {
+        kind: Instruction::SBC,
         addr: Addressing::ZeroPage,
         cycle: 3,
     },
     // 0xe6
-    Instruction {
-        kind: InstKind::INC,
+    Opecode {
+        kind: Instruction::INC,
         addr: Addressing::ZeroPage,
         cycle: 5,
     },
     // 0xe7 (undocumented)
-    Instruction {
-        kind: InstKind::ISC,
+    Opecode {
+        kind: Instruction::ISC,
         addr: Addressing::ZeroPage,
         cycle: 5,
     },
     // 0xe8
-    Instruction {
-        kind: InstKind::INX,
+    Opecode {
+        kind: Instruction::INX,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0xe9
-    Instruction {
-        kind: InstKind::SBC,
+    Opecode {
+        kind: Instruction::SBC,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0xea
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0xeb (undocumented)
-    Instruction {
-        kind: InstKind::SBC,
+    Opecode {
+        kind: Instruction::SBC,
         addr: Addressing::Immediate,
         cycle: 2,
     },
     // 0xec
-    Instruction {
-        kind: InstKind::CPX,
+    Opecode {
+        kind: Instruction::CPX,
         addr: Addressing::Absolute,
         cycle: 4,
     },
     // 0xed
-    Instruction {
-        kind: InstKind::SBC,
+    Opecode {
+        kind: Instruction::SBC,
         addr: Addressing::Absolute,
         cycle: 4,
     },
     // 0xee
-    Instruction {
-        kind: InstKind::INC,
+    Opecode {
+        kind: Instruction::INC,
         addr: Addressing::Absolute,
         cycle: 6,
     },
     // 0xef (undocumented)
-    Instruction {
-        kind: InstKind::ISC,
+    Opecode {
+        kind: Instruction::ISC,
         addr: Addressing::Absolute,
         cycle: 6,
     },
     // 0xf0
-    Instruction {
-        kind: InstKind::BEQ,
+    Opecode {
+        kind: Instruction::BEQ,
         addr: Addressing::Relative,
         cycle: 2,
     },
     // 0xf1
-    Instruction {
-        kind: InstKind::SBC,
+    Opecode {
+        kind: Instruction::SBC,
         addr: Addressing::IndirectY,
         cycle: 5,
     },
     // 0xf2 (undocumented)
-    Instruction {
-        kind: InstKind::KIL,
+    Opecode {
+        kind: Instruction::KIL,
         addr: Addressing::Implied,
         cycle: 0,
     },
     // 0xf3 (undocumented)
-    Instruction {
-        kind: InstKind::ISC,
+    Opecode {
+        kind: Instruction::ISC,
         addr: Addressing::IndirectY,
         cycle: 8,
     },
     // 0xf4 (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::ZeroPageX,
         cycle: 4,
     },
     // 0xf5
-    Instruction {
-        kind: InstKind::SBC,
+    Opecode {
+        kind: Instruction::SBC,
         addr: Addressing::ZeroPageX,
         cycle: 4,
     },
     // 0xf6
-    Instruction {
-        kind: InstKind::INC,
+    Opecode {
+        kind: Instruction::INC,
         addr: Addressing::ZeroPageX,
         cycle: 4,
     },
     // 0xf7 (undocumented)
-    Instruction {
-        kind: InstKind::ISC,
+    Opecode {
+        kind: Instruction::ISC,
         addr: Addressing::ZeroPageX,
         cycle: 6,
     },
     // 0xf8
-    Instruction {
-        kind: InstKind::SED,
+    Opecode {
+        kind: Instruction::SED,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0xf9
-    Instruction {
-        kind: InstKind::SBC,
+    Opecode {
+        kind: Instruction::SBC,
         addr: Addressing::AbsoluteY,
         cycle: 4,
     },
     // 0xfa (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::Implied,
         cycle: 2,
     },
     // 0xfb (undocumented)
-    Instruction {
-        kind: InstKind::ISC,
+    Opecode {
+        kind: Instruction::ISC,
         addr: Addressing::AbsoluteY,
         cycle: 7,
     },
     // 0xfc (undocumented)
-    Instruction {
-        kind: InstKind::NOP,
+    Opecode {
+        kind: Instruction::NOP,
         addr: Addressing::AbsoluteX,
         cycle: 4,
     },
     // 0xfd
-    Instruction {
-        kind: InstKind::SBC,
+    Opecode {
+        kind: Instruction::SBC,
         addr: Addressing::AbsoluteX,
         cycle: 4,
     },
     // 0xfe
-    Instruction {
-        kind: InstKind::INC,
+    Opecode {
+        kind: Instruction::INC,
         addr: Addressing::AbsoluteX,
         cycle: 0,
     },
     // 0xff (undocumented)
-    Instruction {
-        kind: InstKind::ISC,
+    Opecode {
+        kind: Instruction::ISC,
         addr: Addressing::AbsoluteX,
         cycle: 7,
     },
 ];
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct Instruction {
-    kind: InstKind,
+pub struct Opecode {
+    kind: Instruction,
     addr: Addressing,
     cycle: u8,
 }
 
+// TODO: Add Implementations
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[allow(clippy::upper_case_acronyms)]
-pub enum InstKind {
+pub enum Instruction {
     ADC,
     SBC,
     AND,
