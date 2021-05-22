@@ -1,3 +1,5 @@
+use super::{Addressing, Instruction, Opecode};
+
 pub static OPECODES: [Opecode; 0x100] = [
     // 0x00
     Opecode {

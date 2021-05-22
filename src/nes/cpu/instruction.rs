@@ -1,9 +1,9 @@
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Opecode {
-    inst: Instruction,
-    addr: Addressing,
-    cycle: u8,
-    add_cycle: bool,
+    pub inst: Instruction,
+    pub addr: Addressing,
+    pub cycle: u8,
+    pub add_cycle: bool,
 }
 
 // TODO: Add Implementations
