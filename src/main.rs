@@ -1,7 +1,7 @@
-mod rom;
+mod nes;
 mod ui;
 
-use rom::Rom;
+use nes::Rom;
 
 pub type Display = image::RgbImage;
 

@@ -15,16 +15,16 @@ impl Rom {
         validate_byte(&mut bytes, 0x1a)?;
         let prg_len = get_byte(&mut bytes, String::from("PRG ROM length"))?;
         let chr_len = get_byte(&mut bytes, String::from("CHR ROM length"))?;
-        let flag_6 = get_byte(&mut bytes, String::from("Flag byte"))?;
-        let flag_7 = get_byte(&mut bytes, String::from("Flag byte"))?;
-        let flag_8 = get_byte(&mut bytes, String::from("Flag byte"))?;
-        let flag_9 = get_byte(&mut bytes, String::from("Flag byte"))?;
-        let flag_10 = get_byte(&mut bytes, String::from("Flag byte"))?;
-        get_byte(&mut bytes, String::from("Padding byte"))?;
-        get_byte(&mut bytes, String::from("Padding byte"))?;
-        get_byte(&mut bytes, String::from("Padding byte"))?;
-        get_byte(&mut bytes, String::from("Padding byte"))?;
-        get_byte(&mut bytes, String::from("Padding byte"))?;
+        let _flag_6 = get_byte(&mut bytes, String::from("Flag byte"))?;
+        let _flag_7 = get_byte(&mut bytes, String::from("Flag byte"))?;
+        let _flag_8 = get_byte(&mut bytes, String::from("Flag byte"))?;
+        let _flag_9 = get_byte(&mut bytes, String::from("Flag byte"))?;
+        let _flag_10 = get_byte(&mut bytes, String::from("Flag byte"))?;
+        let _flag_11 = get_byte(&mut bytes, String::from("Flag byte"))?;
+        let _flag_12 = get_byte(&mut bytes, String::from("Flag byte"))?;
+        let _flag_13 = get_byte(&mut bytes, String::from("Flag byte"))?;
+        let _flag_14 = get_byte(&mut bytes, String::from("Flag byte"))?;
+        let _flag_15 = get_byte(&mut bytes, String::from("Flag byte"))?;
         let prg_rom = take_bytes(
             &mut bytes,
             0x4000 * (prg_len as usize),
