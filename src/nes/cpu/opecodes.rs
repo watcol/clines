@@ -11,7 +11,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0x01
     Opecode {
         inst: Instruction::ORA,
-        addr: Addressing::XIndirect,
+        addr: Addressing::IndirectX,
         cycle: 6,
         add_cycle: false,
     },
@@ -25,7 +25,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0x03 (undocumented)
     Opecode {
         inst: Instruction::SLO,
-        addr: Addressing::XIndirect,
+        addr: Addressing::IndirectX,
         cycle: 8,
         add_cycle: false,
     },
@@ -235,7 +235,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0x21
     Opecode {
         inst: Instruction::AND,
-        addr: Addressing::XIndirect,
+        addr: Addressing::IndirectX,
         cycle: 6,
         add_cycle: false,
     },
@@ -249,7 +249,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0x23 (undocumented)
     Opecode {
         inst: Instruction::RLA,
-        addr: Addressing::XIndirect,
+        addr: Addressing::IndirectX,
         cycle: 8,
         add_cycle: false,
     },
@@ -459,7 +459,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0x41
     Opecode {
         inst: Instruction::EOR,
-        addr: Addressing::XIndirect,
+        addr: Addressing::IndirectX,
         cycle: 6,
         add_cycle: false,
     },
@@ -585,7 +585,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0x53 (undocumented)
     Opecode {
         inst: Instruction::SRE,
-        addr: Addressing::XIndirect,
+        addr: Addressing::IndirectX,
         cycle: 8,
         add_cycle: false,
     },
@@ -683,7 +683,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0x61
     Opecode {
         inst: Instruction::ADC,
-        addr: Addressing::XIndirect,
+        addr: Addressing::IndirectX,
         cycle: 6,
         add_cycle: false,
     },
@@ -697,7 +697,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0x63 (undocumented)
     Opecode {
         inst: Instruction::RRA,
-        addr: Addressing::XIndirect,
+        addr: Addressing::IndirectX,
         cycle: 8,
         add_cycle: false,
     },
@@ -795,7 +795,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0x71
     Opecode {
         inst: Instruction::ADC,
-        addr: Addressing::XIndirect,
+        addr: Addressing::IndirectX,
         cycle: 6,
         add_cycle: true,
     },
@@ -907,7 +907,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0x81
     Opecode {
         inst: Instruction::STA,
-        addr: Addressing::XIndirect,
+        addr: Addressing::IndirectX,
         cycle: 6,
         add_cycle: false,
     },
@@ -921,7 +921,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0x83 (undocumented)
     Opecode {
         inst: Instruction::SAX,
-        addr: Addressing::XIndirect,
+        addr: Addressing::IndirectX,
         cycle: 6,
         add_cycle: false,
     },
@@ -1131,7 +1131,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0xa1
     Opecode {
         inst: Instruction::LDA,
-        addr: Addressing::XIndirect,
+        addr: Addressing::IndirectX,
         cycle: 6,
         add_cycle: false,
     },
@@ -1145,7 +1145,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0xa3 (undocumented)
     Opecode {
         inst: Instruction::LAX,
-        addr: Addressing::XIndirect,
+        addr: Addressing::IndirectX,
         cycle: 6,
         add_cycle: false,
     },
@@ -1355,7 +1355,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0xc1
     Opecode {
         inst: Instruction::CMP,
-        addr: Addressing::XIndirect,
+        addr: Addressing::IndirectX,
         cycle: 6,
         add_cycle: false,
     },
@@ -1369,7 +1369,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0xc3 (undocumented)
     Opecode {
         inst: Instruction::DCP,
-        addr: Addressing::XIndirect,
+        addr: Addressing::IndirectX,
         cycle: 8,
         add_cycle: false,
     },
@@ -1579,7 +1579,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0xe1
     Opecode {
         inst: Instruction::SBC,
-        addr: Addressing::XIndirect,
+        addr: Addressing::IndirectX,
         cycle: 6,
         add_cycle: false,
     },
@@ -1593,7 +1593,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0xe3 (undocumented)
     Opecode {
         inst: Instruction::ISC,
-        addr: Addressing::XIndirect,
+        addr: Addressing::IndirectX,
         cycle: 8,
         add_cycle: false,
     },

@@ -2,8 +2,8 @@ use std::{error::Error, fmt, fs::File, io::Read, path::Path};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Rom {
-    prg_rom: Vec<u8>,
-    chr_rom: Vec<u8>,
+    pub prg_rom: Vec<u8>,
+    pub chr_rom: Vec<u8>,
 }
 
 impl Rom {
