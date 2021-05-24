@@ -22,8 +22,14 @@ impl Nes {
     }
 
     pub fn run_loop(&mut self) {
+        self.run_loop_inner().unwrap_or_else(|e| {
+            println!("{}", e);
+        })
+    }
+
+    pub fn run_loop_inner(&mut self) -> anyhow::Result<()> {
         loop {
-            cpu::run(self);
+            cpu::run(self)?;
         }
     }
 }

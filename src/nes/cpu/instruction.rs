@@ -9,10 +9,12 @@ pub struct Opecode {
 }
 
 impl Opecode {
-    pub fn exec(&self, bus: &mut CpuBus) -> u8 {
+    pub fn exec(&self, bus: &mut CpuBus) -> anyhow::Result<u8> {
         let (operand, page_corssed) = self.addr.operand(bus);
-        let branched = self.inst.exec(bus, operand);
-        self.cycle + ((page_corssed && self.add_cycle) as u8) + ((branched && self.add_cycle) as u8)
+        let branched = self.inst.exec(bus, operand)?;
+        Ok(self.cycle
+            + ((page_corssed && self.add_cycle) as u8)
+            + ((branched && self.add_cycle) as u8))
     }
 }
 
@@ -99,13 +101,13 @@ pub enum Instruction {
 }
 
 impl Instruction {
-    fn exec(&self, bus: &mut CpuBus, operand: Operand) -> bool {
+    fn exec(&self, bus: &mut CpuBus, operand: Operand) -> anyhow::Result<bool> {
         let mut branched = false;
         match self {
             // Arithmetic Operations
             Self::ADC => {
                 let acc = bus.registers.A;
-                let op = operand.get_byte(bus);
+                let op = operand.get_byte(bus)?;
                 let (res, carry1) = acc.overflowing_add(op);
                 let (res, carry2) = res.overflowing_add(bus.registers.P.carry as u8);
                 bus.registers.P.overflow = ((acc ^ op) & 0x80 == 0) && ((acc ^ res) & 0x80 == 0x80);
@@ -116,7 +118,7 @@ impl Instruction {
             }
             Self::SBC => {
                 let acc = bus.registers.A;
-                let op = operand.get_byte(bus);
+                let op = operand.get_byte(bus)?;
                 let (res, carry1) = acc.overflowing_sub(op);
                 let (res, carry2) = res.overflowing_sub((!bus.registers.P.carry) as u8);
                 bus.registers.P.overflow =
@@ -127,19 +129,19 @@ impl Instruction {
                 bus.registers.A = res;
             }
             Self::AND => {
-                let res = bus.registers.A & operand.get_byte(bus);
+                let res = bus.registers.A & operand.get_byte(bus)?;
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
                 bus.registers.A = res;
             }
             Self::ORA => {
-                let res = bus.registers.A | operand.get_byte(bus);
+                let res = bus.registers.A | operand.get_byte(bus)?;
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
                 bus.registers.A = res;
             }
             Self::EOR => {
-                let res = bus.registers.A ^ operand.get_byte(bus);
+                let res = bus.registers.A ^ operand.get_byte(bus)?;
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
                 bus.registers.A = res;
@@ -224,63 +226,63 @@ impl Instruction {
             Self::BCC => {
                 if !bus.registers.P.carry {
                     branched = true;
-                    bus.registers.PC = operand.get_address();
+                    bus.registers.PC = operand.get_address()?;
                 }
             }
             Self::BCS => {
                 if bus.registers.P.carry {
                     branched = true;
-                    bus.registers.PC = operand.get_address();
+                    bus.registers.PC = operand.get_address()?;
                 }
             }
             Self::BEQ => {
                 if bus.registers.P.zero {
                     branched = true;
-                    bus.registers.PC = operand.get_address();
+                    bus.registers.PC = operand.get_address()?;
                 }
             }
             Self::BNE => {
                 if !bus.registers.P.zero {
                     branched = true;
-                    bus.registers.PC = operand.get_address();
+                    bus.registers.PC = operand.get_address()?;
                 }
             }
             Self::BVC => {
                 if !bus.registers.P.overflow {
                     branched = true;
-                    bus.registers.PC = operand.get_address();
+                    bus.registers.PC = operand.get_address()?;
                 }
             }
             Self::BVS => {
                 if bus.registers.P.overflow {
                     branched = true;
-                    bus.registers.PC = operand.get_address();
+                    bus.registers.PC = operand.get_address()?;
                 }
             }
             Self::BPL => {
                 if !bus.registers.P.negative {
                     branched = true;
-                    bus.registers.PC = operand.get_address();
+                    bus.registers.PC = operand.get_address()?;
                 }
             }
             Self::BMI => {
                 if bus.registers.P.negative {
                     branched = true;
-                    bus.registers.PC = operand.get_address();
+                    bus.registers.PC = operand.get_address()?;
                 }
             }
             // Bit Check
             Self::BIT => {
-                let op = operand.get_byte(bus);
+                let op = operand.get_byte(bus)?;
                 bus.registers.P.zero = (bus.registers.A & op) == 0;
                 bus.registers.P.negative = op & 0x80 == 0x80;
                 bus.registers.P.overflow = op & 0x40 == 0x40;
             }
             // Jump
-            Self::JMP => bus.registers.PC = operand.get_address(),
+            Self::JMP => bus.registers.PC = operand.get_address()?,
             Self::JSR => {
                 bus.push_word(bus.registers.PC - 1);
-                bus.registers.PC = operand.get_address();
+                bus.registers.PC = operand.get_address()?;
             }
             Self::RTS => {
                 let addr = bus.pop_word();
@@ -303,33 +305,33 @@ impl Instruction {
             }
             // Comparison
             Self::CMP => {
-                let res = bus.registers.A as i16 - operand.get_byte(bus) as i16;
+                let res = bus.registers.A as i16 - operand.get_byte(bus)? as i16;
                 bus.registers.P.carry = res >= 0;
                 bus.registers.P.negative = (res as u8) & 0x80 == 0x80;
                 bus.registers.P.zero = (res as u8) == 0;
             }
             Self::CPX => {
-                let res = bus.registers.X as i16 - operand.get_byte(bus) as i16;
+                let res = bus.registers.X as i16 - operand.get_byte(bus)? as i16;
                 bus.registers.P.carry = res >= 0;
                 bus.registers.P.negative = (res as u8) & 0x80 == 0x80;
                 bus.registers.P.zero = (res as u8) == 0;
             }
             Self::CPY => {
-                let res = bus.registers.Y as i16 - operand.get_byte(bus) as i16;
+                let res = bus.registers.Y as i16 - operand.get_byte(bus)? as i16;
                 bus.registers.P.carry = res >= 0;
                 bus.registers.P.negative = (res as u8) & 0x80 == 0x80;
                 bus.registers.P.zero = (res as u8) == 0;
             }
             // Increment/Decrement
             Self::INC => {
-                let addr = operand.get_address();
+                let addr = operand.get_address()?;
                 let res = bus.get_byte(addr) + 1;
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
                 bus.set_byte(addr, res);
             }
             Self::DEC => {
-                let addr = operand.get_address();
+                let addr = operand.get_address()?;
                 let res = bus.get_byte(addr) - 1;
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
@@ -369,26 +371,26 @@ impl Instruction {
             Self::CLV => bus.registers.P.overflow = false,
             // Load/Store
             Self::LDA => {
-                let val = operand.get_byte(bus);
+                let val = operand.get_byte(bus)?;
                 bus.registers.P.negative = val & 0x80 == 0x80;
                 bus.registers.P.zero = val == 0;
                 bus.registers.A = val;
             }
             Self::LDX => {
-                let val = operand.get_byte(bus);
+                let val = operand.get_byte(bus)?;
                 bus.registers.P.negative = val & 0x80 == 0x80;
                 bus.registers.P.zero = val == 0;
                 bus.registers.X = val;
             }
             Self::LDY => {
-                let val = operand.get_byte(bus);
+                let val = operand.get_byte(bus)?;
                 bus.registers.P.negative = val & 0x80 == 0x80;
                 bus.registers.P.zero = val == 0;
                 bus.registers.Y = val;
             }
-            Self::STA => bus.set_byte(operand.get_address(), bus.registers.A),
-            Self::STX => bus.set_byte(operand.get_address(), bus.registers.X),
-            Self::STY => bus.set_byte(operand.get_address(), bus.registers.Y),
+            Self::STA => bus.set_byte(operand.get_address()?, bus.registers.A)?,
+            Self::STX => bus.set_byte(operand.get_address()?, bus.registers.X)?,
+            Self::STY => bus.set_byte(operand.get_address()?, bus.registers.Y)?,
             // Transformations
             Self::TAX => bus.registers.X = bus.registers.A,
             Self::TXA => bus.registers.A = bus.registers.X,
@@ -397,59 +399,59 @@ impl Instruction {
             Self::TSX => bus.registers.X = bus.registers.S,
             Self::TXS => bus.registers.S = bus.registers.X,
             // Stack controls
-            Self::PHA => bus.push_byte(bus.registers.A),
+            Self::PHA => bus.push_byte(bus.registers.A)?,
             Self::PLA => {
                 let res = bus.pop_byte();
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
                 bus.registers.A = res;
             }
-            Self::PHP => bus.push_byte(bus.registers.P.as_u8()),
+            Self::PHP => bus.push_byte(bus.registers.P.as_u8())?,
             Self::PLP => bus.registers.P = super::Status::from_u8(bus.pop_byte()),
             // NOP/KIL
             Self::NOP => {}
             Self::KIL => panic!("Process Killed by the instruction."),
             // Illegal Operations
             Self::SLO => {
-                let addr = operand.get_address();
+                let addr = operand.get_address()?;
                 let acc = bus.get_byte(addr);
                 let res = acc * 2;
                 bus.registers.P.carry = acc & 0x80 == 0x80;
-                bus.set_byte(addr, res);
-                let res = bus.registers.A | operand.get_byte(bus);
+                bus.set_byte(addr, res)?;
+                let res = bus.registers.A | res;
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
                 bus.registers.A = res;
             }
             Self::RLA => {
-                let addr = operand.get_address();
+                let addr = operand.get_address()?;
                 let acc = bus.get_byte(addr);
                 let res = (acc << 1) | (bus.registers.P.carry as u8);
                 bus.registers.P.carry = acc & 0x80 == 0x80;
-                bus.set_byte(addr, res);
-                let res = bus.registers.A & operand.get_byte(bus);
+                bus.set_byte(addr, res)?;
+                let res = bus.registers.A & res;
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
                 bus.registers.A = res;
             }
             Self::SRE => {
-                let addr = operand.get_address();
+                let addr = operand.get_address()?;
                 let acc = bus.get_byte(addr);
                 let res = acc >> 1;
                 bus.registers.P.carry = acc & 0x1 == 0x1;
-                bus.set_byte(addr, res);
-                let res = bus.registers.A ^ operand.get_byte(bus);
+                bus.set_byte(addr, res)?;
+                let res = bus.registers.A ^ res;
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
                 bus.registers.A = res;
             }
             Self::RRA => {
-                let addr = operand.get_address();
+                let addr = operand.get_address()?;
                 let acc = bus.get_byte(addr);
                 let res = (acc >> 1) | (bus.registers.P.carry as u8 * 0x80);
-                bus.set_byte(addr, res);
+                bus.set_byte(addr, res)?;
                 let acc = bus.registers.A;
-                let op = operand.get_byte(bus);
+                let op = res;
                 let (res, carry1) = acc.overflowing_add(op);
                 let (res, carry2) = res.overflowing_add(bus.registers.P.carry as u8);
                 bus.registers.P.overflow = ((acc ^ op) & 0x80 == 0) && ((acc ^ res) & 0x80 == 0x80);
@@ -458,29 +460,29 @@ impl Instruction {
                 bus.registers.P.zero = res == 0;
                 bus.registers.A = res;
             }
-            Self::SAX => bus.set_byte(operand.get_address(), bus.registers.A & bus.registers.Y),
+            Self::SAX => bus.set_byte(operand.get_address()?, bus.registers.A & bus.registers.Y)?,
             Self::LAX => {
-                let val = operand.get_byte(bus);
+                let val = operand.get_byte(bus)?;
                 bus.registers.P.negative = val & 0x80 == 0x80;
                 bus.registers.P.zero = val == 0;
                 bus.registers.A = val;
                 bus.registers.X = val;
             }
             Self::DCP => {
-                let addr = operand.get_address();
+                let addr = operand.get_address()?;
                 let val = bus.get_byte(addr);
                 let res = val - 1;
-                bus.set_byte(addr, res);
+                bus.set_byte(addr, res)?;
                 let res = bus.registers.A as i16 - val as i16;
                 bus.registers.P.carry = res >= 0;
                 bus.registers.P.negative = (res as u8) & 0x80 == 0x80;
                 bus.registers.P.zero = (res as u8) == 0;
             }
             Self::ISC => {
-                let addr = operand.get_address();
+                let addr = operand.get_address()?;
                 let val = bus.get_byte(addr);
                 let res = val + 1;
-                bus.set_byte(addr, res);
+                bus.set_byte(addr, res)?;
                 let acc = bus.registers.A;
                 let (res, carry1) = acc.overflowing_sub(val);
                 let (res, carry2) = res.overflowing_sub((!bus.registers.P.carry) as u8);
@@ -492,14 +494,14 @@ impl Instruction {
                 bus.registers.A = res;
             }
             Self::ANC => {
-                let res = bus.registers.A & operand.get_byte(bus);
+                let res = bus.registers.A & operand.get_byte(bus)?;
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.carry = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
                 bus.registers.A = res;
             }
             Self::ALR => {
-                let res1 = bus.registers.A & operand.get_byte(bus);
+                let res1 = bus.registers.A & operand.get_byte(bus)?;
                 let res2 = res1 >> 1;
                 bus.registers.P.carry = res1 & 0x1 == 0x1;
                 bus.registers.P.negative = res2 & 0x80 == 0x80;
@@ -507,7 +509,7 @@ impl Instruction {
                 bus.registers.A = res2;
             }
             Self::ARR => {
-                let res1 = bus.registers.A & operand.get_byte(bus);
+                let res1 = bus.registers.A & operand.get_byte(bus)?;
                 let res2 = (res1 >> 1) | (bus.registers.P.carry as u8 * 0x80);
                 bus.registers.P.carry = res1 & 0x1 == 0x1;
                 bus.registers.P.negative = res2 & 0x80 == 0x80;
@@ -515,29 +517,32 @@ impl Instruction {
                 bus.registers.A = res2;
             }
             Self::XAA => {
-                let res = bus.registers.X & operand.get_byte(bus);
+                let res = bus.registers.X & operand.get_byte(bus)?;
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
                 bus.registers.A = res;
             }
             Self::AXS => {
-                let res = (bus.registers.A & bus.registers.X) as i16 - operand.get_byte(bus) as i16;
+                let res =
+                    (bus.registers.A & bus.registers.X) as i16 - operand.get_byte(bus)? as i16;
                 bus.registers.P.carry = res >= 0;
                 bus.registers.P.negative = (res as u8) & 0x80 == 0x80;
                 bus.registers.P.zero = (res as u8) == 0;
                 bus.registers.X = res as u8;
             }
             Self::LAS => {
-                let res = operand.get_byte(bus) & bus.registers.S;
+                let res = operand.get_byte(bus)? & bus.registers.S;
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
                 bus.registers.A = res;
                 bus.registers.X = res;
                 bus.registers.Y = res;
             }
-            Self::AHX | Self::SHX | Self::SHY | Self::TAS => unimplemented!(),
+            Self::AHX | Self::SHX | Self::SHY | Self::TAS => {
+                anyhow::bail!("{:?} is unimplemented.", self)
+            }
         }
-        branched
+        Ok(branched)
     }
 }
 
@@ -614,19 +619,19 @@ pub enum Operand {
 }
 
 impl Operand {
-    fn get_address(self) -> u16 {
+    fn get_address(self) -> anyhow::Result<u16> {
         match self {
-            Self::Address(addr) => addr,
-            _ => unreachable!(),
+            Self::Address(addr) => Ok(addr),
+            _ => anyhow::bail!("Cannot get memory of the operand."),
         }
     }
 
-    fn get_byte(self, bus: &mut CpuBus) -> u8 {
+    fn get_byte(self, bus: &mut CpuBus) -> anyhow::Result<u8> {
         match self {
-            Self::Accumulator => bus.registers.A,
-            Self::Value(val) => val,
-            Self::Address(addr) => bus.get_byte(addr),
-            _ => unreachable!(),
+            Self::Accumulator => Ok(bus.registers.A),
+            Self::Value(val) => Ok(val),
+            Self::Address(addr) => Ok(bus.get_byte(addr)),
+            _ => anyhow::bail!("Missing the value."),
         }
     }
 }
