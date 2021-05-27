@@ -17,7 +17,7 @@ impl Default for Registers {
             Y: 0x00,
             P: Status::default(),
             S: 0xFD,
-            PC: 0x0000,
+            PC: 0x8000,
         }
     }
 }

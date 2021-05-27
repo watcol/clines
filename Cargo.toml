@@ -18,6 +18,8 @@ include = [
 
 [dependencies]
 anyhow = "1.0"
+fmtlog = "0.1"
+log = "0.4"
 image = "0.23"
 crossterm = "0.19"
 minifb = "0.19"

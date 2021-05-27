@@ -12,9 +12,10 @@ impl Opecode {
     pub fn exec(&self, bus: &mut CpuBus) -> anyhow::Result<u8> {
         let (operand, page_corssed) = self.addr.operand(bus);
         let branched = self.inst.exec(bus, operand)?;
-        Ok(self.cycle
+        let cycle = self.cycle
             + ((page_corssed && self.add_cycle) as u8)
-            + ((branched && self.add_cycle) as u8))
+            + ((branched && self.add_cycle) as u8);
+        Ok(cycle)
     }
 }
 
