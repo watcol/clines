@@ -161,7 +161,7 @@ impl Instruction {
                     bus.registers.P.carry = acc & 0x80 == 0x80;
                     bus.registers.P.negative = res & 0x80 == 0x80;
                     bus.registers.P.zero = res == 0;
-                    bus.set_byte(addr, res);
+                    bus.set_byte(addr, res)?;
                 }
                 _ => unreachable!(),
             },
@@ -180,7 +180,7 @@ impl Instruction {
                     bus.registers.P.carry = acc & 0x1 == 0x1;
                     bus.registers.P.negative = res & 0x80 == 0x80;
                     bus.registers.P.zero = res == 0;
-                    bus.set_byte(addr, res);
+                    bus.set_byte(addr, res)?;
                 }
                 _ => unreachable!(),
             },
@@ -199,7 +199,7 @@ impl Instruction {
                     bus.registers.P.carry = acc & 0x80 == 0x80;
                     bus.registers.P.negative = res & 0x80 == 0x80;
                     bus.registers.P.zero = res == 0;
-                    bus.set_byte(addr, res);
+                    bus.set_byte(addr, res)?;
                 }
                 _ => unreachable!(),
             },
@@ -218,7 +218,7 @@ impl Instruction {
                     bus.registers.P.carry = acc & 0x1 == 0x1;
                     bus.registers.P.negative = res & 0x80 == 0x80;
                     bus.registers.P.zero = res == 0;
-                    bus.set_byte(addr, res);
+                    bus.set_byte(addr, res)?;
                 }
                 _ => unreachable!(),
             },
@@ -281,7 +281,7 @@ impl Instruction {
             // Jump
             Self::JMP => bus.registers.PC = operand.get_address()?,
             Self::JSR => {
-                bus.push_word(bus.registers.PC - 1);
+                bus.push_word(bus.registers.PC - 1)?;
                 bus.registers.PC = operand.get_address()?;
             }
             Self::RTS => {
@@ -293,8 +293,8 @@ impl Instruction {
                 if !bus.registers.P.interrupt {
                     bus.registers.P.break_mode = true;
                     bus.registers.PC += 1;
-                    bus.push_word(bus.registers.PC);
-                    bus.push_byte(bus.registers.P.as_u8());
+                    bus.push_word(bus.registers.PC)?;
+                    bus.push_byte(bus.registers.P.as_u8())?;
                     bus.registers.P.interrupt = true;
                     bus.registers.PC = bus.get_word(0xfffe);
                 }
@@ -328,14 +328,14 @@ impl Instruction {
                 let res = bus.get_byte(addr) + 1;
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
-                bus.set_byte(addr, res);
+                bus.set_byte(addr, res)?;
             }
             Self::DEC => {
                 let addr = operand.get_address()?;
                 let res = bus.get_byte(addr) - 1;
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
-                bus.set_byte(addr, res);
+                bus.set_byte(addr, res)?;
             }
             Self::INX => {
                 let res = bus.registers.X + 1;
