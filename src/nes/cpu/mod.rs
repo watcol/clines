@@ -15,3 +15,8 @@ pub fn run(nes: &mut Nes) -> anyhow::Result<u8> {
     let opecode = OPECODES[bus.increment_byte() as usize];
     opecode.exec(&mut bus)
 }
+
+pub fn reset(nes: &mut Nes) {
+    let mut bus = CpuBus::new(nes);
+    bus.registers.PC = bus.get_word(0xfffc);
+}
