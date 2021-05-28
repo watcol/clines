@@ -1,7 +1,9 @@
 mod cpu;
+mod ppu;
 mod rom;
 
 use cpu::Registers;
+use ppu::PpuRegisters;
 pub use rom::Rom;
 use std::path::Path;
 
@@ -9,6 +11,7 @@ use std::path::Path;
 pub struct Nes {
     rom: Rom,
     cpu_registers: Registers,
+    ppu_registers: PpuRegisters,
     wram: [u8; 0x800],
 }
 
@@ -17,6 +20,7 @@ impl Nes {
         Ok(Self {
             rom: Rom::from_path(path)?,
             cpu_registers: Registers::default(),
+            ppu_registers: PpuRegisters::default(),
             wram: [0; 0x800],
         })
     }

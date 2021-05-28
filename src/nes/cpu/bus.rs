@@ -1,9 +1,10 @@
 use super::Registers;
+use crate::nes::ppu::PpuRegisters;
 use crate::nes::Nes;
 
 pub struct CpuBus<'a> {
     pub registers: &'a mut Registers,
-    unimplemented_region: [u8; 0x6000],
+    ppu_registers: &'a mut PpuRegisters,
     wram: &'a mut [u8; 0x800],
     prg_rom: &'a [u8],
 }
@@ -12,7 +13,7 @@ impl<'a> CpuBus<'a> {
     pub fn new(nes: &'a mut Nes) -> Self {
         Self {
             registers: &mut nes.cpu_registers,
-            unimplemented_region: [0; 0x6000],
+            ppu_registers: &mut nes.ppu_registers,
             wram: &mut nes.wram,
             prg_rom: &nes.rom.prg_rom,
         }
@@ -21,7 +22,11 @@ impl<'a> CpuBus<'a> {
     pub fn get_byte(&self, addr: u16) -> u8 {
         match addr {
             0x0000..=0x1FFF => self.wram[(addr % 0x800) as usize],
-            0x2000..=0x7FFF => self.unimplemented_region[(addr - 0x2000) as usize],
+            0x2000..=0x3FFF => self.ppu_registers.read(addr),
+            0x4000..=0x7FFF => {
+                warn!("Address {:#06x} is unimplemented", addr);
+                0
+            }
             _ => self.prg_rom[(addr - 0x8000) as usize],
         }
     }
@@ -32,24 +37,24 @@ impl<'a> CpuBus<'a> {
         (upper << 8) + lower
     }
 
-    pub fn set_byte(&mut self, addr: u16, value: u8) -> anyhow::Result<()> {
+    pub fn set_byte(&mut self, addr: u16, value: u8) {
         match addr {
             0x0000..=0x1FFF => self.wram[(addr % 0x800) as usize] = value,
-            0x2000..=0x7FFF => self.unimplemented_region[(addr - 0x2000) as usize] = value,
-            _ => anyhow::bail!("Setting byte to rom is not allowed."),
+            0x2000..=0x3FFF => self.ppu_registers.write(addr, value),
+            0x4000..=0x7FFF => warn!("Address {:#06x} is unimplemented", addr),
+            _ => warn!("Writing to {:#06x} is not allowed.", addr),
         }
-        Ok(())
     }
 
-    pub fn set_word(&mut self, addr: u16, value: u16) -> anyhow::Result<()> {
+    pub fn set_word(&mut self, addr: u16, value: u16) {
         let lower = (value % 0x100) as u8;
         let upper = (value >> 8) as u8;
-        self.set_byte(addr, lower)?;
-        self.set_byte(addr, upper)
+        self.set_byte(addr, lower);
+        self.set_byte(addr, upper);
     }
 
     pub fn push_byte(&mut self, value: u8) -> anyhow::Result<()> {
-        self.set_byte(0x100 + self.registers.S as u16, value)?;
+        self.set_byte(0x100 + self.registers.S as u16, value);
         self.registers.S -= 1;
         Ok(())
     }

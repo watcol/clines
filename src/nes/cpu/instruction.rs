@@ -162,7 +162,7 @@ impl Instruction {
                     bus.registers.P.carry = acc & 0x80 == 0x80;
                     bus.registers.P.negative = res & 0x80 == 0x80;
                     bus.registers.P.zero = res == 0;
-                    bus.set_byte(addr, res)?;
+                    bus.set_byte(addr, res);
                 }
                 _ => unreachable!(),
             },
@@ -181,7 +181,7 @@ impl Instruction {
                     bus.registers.P.carry = acc & 0x1 == 0x1;
                     bus.registers.P.negative = res & 0x80 == 0x80;
                     bus.registers.P.zero = res == 0;
-                    bus.set_byte(addr, res)?;
+                    bus.set_byte(addr, res);
                 }
                 _ => unreachable!(),
             },
@@ -200,7 +200,7 @@ impl Instruction {
                     bus.registers.P.carry = acc & 0x80 == 0x80;
                     bus.registers.P.negative = res & 0x80 == 0x80;
                     bus.registers.P.zero = res == 0;
-                    bus.set_byte(addr, res)?;
+                    bus.set_byte(addr, res);
                 }
                 _ => unreachable!(),
             },
@@ -219,7 +219,7 @@ impl Instruction {
                     bus.registers.P.carry = acc & 0x1 == 0x1;
                     bus.registers.P.negative = res & 0x80 == 0x80;
                     bus.registers.P.zero = res == 0;
-                    bus.set_byte(addr, res)?;
+                    bus.set_byte(addr, res);
                 }
                 _ => unreachable!(),
             },
@@ -329,14 +329,14 @@ impl Instruction {
                 let res = bus.get_byte(addr) + 1;
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
-                bus.set_byte(addr, res)?;
+                bus.set_byte(addr, res);
             }
             Self::DEC => {
                 let addr = operand.get_address()?;
                 let res = bus.get_byte(addr) - 1;
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
-                bus.set_byte(addr, res)?;
+                bus.set_byte(addr, res);
             }
             Self::INX => {
                 let res = bus.registers.X + 1;
@@ -389,9 +389,9 @@ impl Instruction {
                 bus.registers.P.zero = val == 0;
                 bus.registers.Y = val;
             }
-            Self::STA => bus.set_byte(operand.get_address()?, bus.registers.A)?,
-            Self::STX => bus.set_byte(operand.get_address()?, bus.registers.X)?,
-            Self::STY => bus.set_byte(operand.get_address()?, bus.registers.Y)?,
+            Self::STA => bus.set_byte(operand.get_address()?, bus.registers.A),
+            Self::STX => bus.set_byte(operand.get_address()?, bus.registers.X),
+            Self::STY => bus.set_byte(operand.get_address()?, bus.registers.Y),
             // Transformations
             Self::TAX => bus.registers.X = bus.registers.A,
             Self::TXA => bus.registers.A = bus.registers.X,
@@ -418,7 +418,7 @@ impl Instruction {
                 let acc = bus.get_byte(addr);
                 let res = acc * 2;
                 bus.registers.P.carry = acc & 0x80 == 0x80;
-                bus.set_byte(addr, res)?;
+                bus.set_byte(addr, res);
                 let res = bus.registers.A | res;
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
@@ -429,7 +429,7 @@ impl Instruction {
                 let acc = bus.get_byte(addr);
                 let res = (acc << 1) | (bus.registers.P.carry as u8);
                 bus.registers.P.carry = acc & 0x80 == 0x80;
-                bus.set_byte(addr, res)?;
+                bus.set_byte(addr, res);
                 let res = bus.registers.A & res;
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
@@ -440,7 +440,7 @@ impl Instruction {
                 let acc = bus.get_byte(addr);
                 let res = acc >> 1;
                 bus.registers.P.carry = acc & 0x1 == 0x1;
-                bus.set_byte(addr, res)?;
+                bus.set_byte(addr, res);
                 let res = bus.registers.A ^ res;
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
@@ -450,7 +450,7 @@ impl Instruction {
                 let addr = operand.get_address()?;
                 let acc = bus.get_byte(addr);
                 let res = (acc >> 1) | (bus.registers.P.carry as u8 * 0x80);
-                bus.set_byte(addr, res)?;
+                bus.set_byte(addr, res);
                 let acc = bus.registers.A;
                 let op = res;
                 let (res, carry1) = acc.overflowing_add(op);
@@ -461,7 +461,7 @@ impl Instruction {
                 bus.registers.P.zero = res == 0;
                 bus.registers.A = res;
             }
-            Self::SAX => bus.set_byte(operand.get_address()?, bus.registers.A & bus.registers.Y)?,
+            Self::SAX => bus.set_byte(operand.get_address()?, bus.registers.A & bus.registers.Y),
             Self::LAX => {
                 let val = operand.get_byte(bus)?;
                 bus.registers.P.negative = val & 0x80 == 0x80;
@@ -473,7 +473,7 @@ impl Instruction {
                 let addr = operand.get_address()?;
                 let val = bus.get_byte(addr);
                 let res = val - 1;
-                bus.set_byte(addr, res)?;
+                bus.set_byte(addr, res);
                 let res = bus.registers.A as i16 - val as i16;
                 bus.registers.P.carry = res >= 0;
                 bus.registers.P.negative = (res as u8) & 0x80 == 0x80;
@@ -483,7 +483,7 @@ impl Instruction {
                 let addr = operand.get_address()?;
                 let val = bus.get_byte(addr);
                 let res = val + 1;
-                bus.set_byte(addr, res)?;
+                bus.set_byte(addr, res);
                 let acc = bus.registers.A;
                 let (res, carry1) = acc.overflowing_sub(val);
                 let (res, carry2) = res.overflowing_sub((!bus.registers.P.carry) as u8);
