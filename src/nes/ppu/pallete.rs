@@ -45,4 +45,9 @@ impl Pallete {
             _ => unreachable!(),
         }
     }
+
+    pub fn get_bg_pallete(&self, id: u8) -> [u8; 4] {
+        let bgs = self.bg[id as usize];
+        [self.universal_bg, bgs[0], bgs[1], bgs[2]]
+    }
 }

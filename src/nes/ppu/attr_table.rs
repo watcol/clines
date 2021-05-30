@@ -16,6 +16,18 @@ impl AttrTable {
         self.0[y as usize][x as usize] = value
     }
 
+    pub fn get_pallete_id(&self, x: u8, y: u8) -> u8 {
+        let x = x / 2;
+        let y = y / 2;
+        let right = x % 2;
+        let x = x / 2;
+        let bottom = y % 2;
+        let y = y / 2;
+        let byte = self.get_byte(x, y);
+        let offset = (bottom * 2 + right) * 2;
+        (byte >> offset) % 4
+    }
+
     pub fn read(&self, addr: u16) -> u8 {
         let x = (addr % 8) as u8;
         let y = (addr / 8) as u8;

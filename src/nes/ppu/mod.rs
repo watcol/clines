@@ -15,7 +15,7 @@ use attr_table::AttrTable;
 use bus::PpuBus;
 use name_table::NameTable;
 use pallete::Pallete;
-use sprite::Sprite;
+use sprite::{ColoredSprite, Sprite};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Ppu {
@@ -57,7 +57,10 @@ impl Ppu {
         for x in 0..32 {
             let index = self.name_table0.get_byte(x, line);
             let sprite = Sprite::new(&rom.chr_rom, index);
-            renderer::render(&mut self.display, &sprite, x, line);
+            let pallete_id = self.attr_table0.get_pallete_id(x, line);
+            let pallete = self.pallete.get_bg_pallete(pallete_id);
+            let colored_sprite = ColoredSprite::new(&sprite, &pallete);
+            renderer::render(&mut self.display, &colored_sprite, x, line);
         }
 
         if line == 14 {
