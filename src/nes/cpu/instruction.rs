@@ -11,7 +11,6 @@ pub struct Opecode {
 impl Opecode {
     pub fn exec(&self, bus: &mut CpuBus) -> anyhow::Result<u8> {
         let (operand, page_corssed) = self.addr.operand(bus);
-        debug!("{:?} {:?}", self.inst, operand);
         let branched = self.inst.exec(bus, operand)?;
         let cycle = self.cycle
             + ((page_corssed && self.add_cycle) as u8)
@@ -589,10 +588,13 @@ impl Addressing {
                 Operand::Address(bus.increment_word() + (bus.registers.Y as u16)),
                 false,
             ),
-            Self::Relative => (
-                Operand::Address((bus.registers.PC as i16 + bus.increment_byte() as i16) as u16),
-                false,
-            ),
+            Self::Relative => {
+                let offset = bus.increment_byte() as i8;
+                (
+                    Operand::Address((bus.registers.PC as i16 + offset as i16) as u16),
+                    false,
+                )
+            }
             Self::Indirect => {
                 let addr = bus.increment_word();
                 (Operand::Address(bus.get_word(addr)), false)

@@ -1,4 +1,4 @@
-use super::{AttrTable, Context, NameTable, Ppu, Registers};
+use super::{AttrTable, Context, NameTable, Pallete, Ppu, Registers};
 use crate::nes::Rom;
 
 pub struct PpuBus<'a> {
@@ -7,6 +7,7 @@ pub struct PpuBus<'a> {
     pattern_table: &'a [u8],
     name_table0: &'a mut NameTable,
     attr_table0: &'a mut AttrTable,
+    pallete: &'a mut Pallete,
 }
 
 impl<'a> PpuBus<'a> {
@@ -17,6 +18,7 @@ impl<'a> PpuBus<'a> {
             pattern_table: &rom.chr_rom,
             name_table0: &mut ppu.name_table0,
             attr_table0: &mut ppu.attr_table0,
+            pallete: &mut ppu.pallete,
         }
     }
 
@@ -35,10 +37,7 @@ impl<'a> PpuBus<'a> {
                 warn!("Unimplemented memory region: {:#06x}", addr);
                 0
             }
-            0x3F00..=0x3FFF => {
-                warn!("Unimplemented memory region: {:#06x}", addr);
-                0
-            }
+            0x3F00..=0x3FFF => self.pallete.read((addr - 0x3F00) % 0x20),
             _ => {
                 warn!("Illegal memory region: {:#06x}", addr);
                 0
@@ -57,9 +56,7 @@ impl<'a> PpuBus<'a> {
             0x3400..=0x3EFF => {
                 warn!("Unimplemented memory region: {:#06x}", addr);
             }
-            0x3F00..=0x3FFF => {
-                warn!("Unimplemented memory region: {:#06x}", addr);
-            }
+            0x3F00..=0x3FFF => self.pallete.write((addr - 0x3F00) % 0x20, value),
             _ => {
                 warn!("Illegal memory region: {:#06x}", addr);
             }
