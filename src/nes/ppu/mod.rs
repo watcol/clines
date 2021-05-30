@@ -3,6 +3,7 @@ mod bus;
 mod name_table;
 mod pallete;
 mod registers;
+mod sprite;
 
 use crate::nes::Rom;
 use crate::Display;
@@ -16,11 +17,11 @@ pub use registers::Registers;
 #[derive(Clone, Default, Debug, PartialEq, Eq)]
 pub struct Ppu {
     pub registers: Registers,
+    display: Display,
     cycle: u16,
     lines: u16,
     ppu_addr: u16,
     ppu_addr_tmp: Option<u8>,
-    display: Display,
     name_table0: NameTable,
     attr_table0: AttrTable,
     pallete: Pallete,
@@ -29,7 +30,7 @@ pub struct Ppu {
 impl Ppu {
     pub fn run(&mut self, rom: &Rom, cycle: u8) {
         PpuBus::new(self, rom).sync_registers();
-        let _line = match self.add_cycle(cycle) {
+        let line = match self.add_cycle(cycle) {
             Some(line) => line,
             None => return,
         };
