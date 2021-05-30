@@ -3,18 +3,21 @@ mod bus;
 mod name_table;
 mod pallete;
 mod registers;
+mod renderer;
 mod sprite;
 
 use crate::nes::Rom;
 use crate::Display;
 
+pub use registers::Registers;
+
 use attr_table::AttrTable;
 use bus::PpuBus;
 use name_table::NameTable;
 use pallete::Pallete;
-pub use registers::Registers;
+use sprite::Sprite;
 
-#[derive(Clone, Default, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Ppu {
     pub registers: Registers,
     display: Display,
@@ -27,13 +30,43 @@ pub struct Ppu {
     pallete: Pallete,
 }
 
+impl Default for Ppu {
+    fn default() -> Self {
+        Self {
+            registers: Registers::default(),
+            display: Display::new(256, 240),
+            cycle: 0,
+            lines: 0,
+            ppu_addr: 0,
+            ppu_addr_tmp: None,
+            name_table0: NameTable::default(),
+            attr_table0: AttrTable::default(),
+            pallete: Pallete::default(),
+        }
+    }
+}
+
 impl Ppu {
-    pub fn run(&mut self, rom: &Rom, cycle: u8) {
+    pub fn run(&mut self, rom: &Rom, cycle: u8) -> Option<Display> {
         PpuBus::new(self, rom).sync_registers();
         let line = match self.add_cycle(cycle) {
             Some(line) => line,
-            None => return,
+            None => return None,
         };
+
+        for x in 0..32 {
+            let index = self.name_table0.get_byte(x, line);
+            let sprite = Sprite::new(&rom.chr_rom, index);
+            renderer::render(&mut self.display, &sprite, x, line);
+        }
+
+        if line == 14 {
+            let tmp = self.display.clone();
+            self.display = Display::new(256, 240);
+            Some(tmp)
+        } else {
+            None
+        }
     }
 
     pub fn add_cycle(&mut self, cycle: u8) -> Option<u8> {

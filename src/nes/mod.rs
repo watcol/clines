@@ -2,24 +2,27 @@ mod cpu;
 mod ppu;
 mod rom;
 
+use crate::ui::Ui;
 use cpu::Cpu;
 use ppu::Ppu;
 pub use rom::Rom;
 use std::path::Path;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Nes {
+pub struct Nes<U> {
     rom: Rom,
     cpu: Cpu,
     ppu: Ppu,
+    ui: U,
 }
 
-impl Nes {
-    pub fn from_path<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
+impl<U: Ui> Nes<U> {
+    pub fn from_path<P: AsRef<Path>>(path: P, ui: U) -> anyhow::Result<Self> {
         Ok(Self {
             rom: Rom::from_path(path)?,
             cpu: Cpu::default(),
             ppu: Ppu::default(),
+            ui,
         })
     }
 
@@ -32,7 +35,9 @@ impl Nes {
     pub fn run_loop_inner(&mut self) -> anyhow::Result<()> {
         loop {
             let cycle = self.cpu.run(&self.rom, &mut self.ppu)?;
-            self.ppu.run(&self.rom, cycle * 3);
+            if let Some(display) = self.ppu.run(&self.rom, cycle * 3) {
+                self.ui.flush(&display)?;
+            }
         }
     }
 }

@@ -2,8 +2,8 @@
 pub struct Sprite([[u8; 8]; 8]);
 
 impl Sprite {
-    pub fn new(chr_rom: Vec<u8>, index: u8) -> Self {
-        let chunk = chr_rom.chunks(0x10).nth(index as usize).unwrap();
+    pub fn new<T: AsRef<[u8]>>(chr_rom: T, index: u8) -> Self {
+        let chunk = chr_rom.as_ref().chunks(0x10).nth(index as usize).unwrap();
         let mut sprite = [[0; 8]; 8];
         for i in 0..8 {
             let mut byte1 = chunk[i];
