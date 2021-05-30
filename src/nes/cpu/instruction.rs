@@ -11,6 +11,7 @@ pub struct Opecode {
 impl Opecode {
     pub fn exec(&self, bus: &mut CpuBus) -> anyhow::Result<u8> {
         let (operand, page_corssed) = self.addr.operand(bus);
+        debug!("{:?} {:?}", self.inst, operand);
         let branched = self.inst.exec(bus, operand)?;
         let cycle = self.cycle
             + ((page_corssed && self.add_cycle) as u8)

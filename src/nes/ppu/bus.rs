@@ -1,7 +1,9 @@
-use super::{AttrTable, NameTable, Ppu};
+use super::{AttrTable, Context, NameTable, Ppu, Registers};
 use crate::nes::Rom;
 
 pub struct PpuBus<'a> {
+    pub registers: &'a mut Registers,
+    ctx: &'a mut Context,
     pattern_table: &'a [u8],
     name_table0: &'a mut NameTable,
     attr_table0: &'a mut AttrTable,
@@ -10,6 +12,8 @@ pub struct PpuBus<'a> {
 impl<'a> PpuBus<'a> {
     pub fn new(ppu: &'a mut Ppu, rom: &'a Rom) -> Self {
         Self {
+            registers: &mut ppu.registers,
+            ctx: &mut ppu.ctx,
             pattern_table: &rom.chr_rom,
             name_table0: &mut ppu.name_table0,
             attr_table0: &mut ppu.attr_table0,
@@ -59,6 +63,35 @@ impl<'a> PpuBus<'a> {
             _ => {
                 warn!("Illegal memory region: {:#06x}", addr);
             }
+        }
+    }
+
+    pub fn sync_registers(&mut self) {
+        if self.registers.ppu_addr_writed {
+            self.registers.ppu_addr_writed = false;
+            match self.ctx.ppu_addr_tmp {
+                None => {
+                    self.ctx.ppu_addr_tmp = Some(self.registers.ppu_addr);
+                }
+                Some(tmp) => {
+                    self.ctx.ppu_addr_tmp = None;
+                    self.ctx.ppu_addr = (tmp as u16) * 0x100 + self.registers.ppu_addr as u16;
+                    self.registers.ppu_data = self.get_byte(self.ctx.ppu_addr);
+                }
+            }
+        }
+
+        if self.registers.ppu_data_writed {
+            self.registers.ppu_data_writed = false;
+            self.set_byte(self.ctx.ppu_addr, self.registers.ppu_data);
+            self.ctx.ppu_addr += 1;
+            self.registers.ppu_data = self.get_byte(self.ctx.ppu_addr);
+        }
+
+        if self.registers.ppu_data_readed {
+            self.registers.ppu_data_readed = false;
+            self.ctx.ppu_addr += 1;
+            self.registers.ppu_data = self.get_byte(self.ctx.ppu_addr);
         }
     }
 }

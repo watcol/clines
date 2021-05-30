@@ -1,56 +1,47 @@
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub struct Registers {
-    pub ppu_ctrl: u8,
-    pub ppu_mask: u8,
-    pub ppu_status: u8,
-    pub oam_addr: u8,
-    pub oam_data: u8,
-    pub ppu_scroll: u8,
-    pub ppu_addr: u8,
-    pub ppu_data: u8,
-}
-
-impl Default for Registers {
-    fn default() -> Self {
-        Self {
-            ppu_ctrl: 0,
-            ppu_mask: 0,
-            ppu_status: 0,
-            oam_addr: 0,
-            oam_data: 0,
-            ppu_scroll: 0,
-            ppu_addr: 0,
-            ppu_data: 0,
-        }
-    }
+    pub(super) ppu_ctrl: u8,
+    pub(super) ppu_mask: u8,
+    pub(super) ppu_status: u8,
+    pub(super) oam_addr: u8,
+    pub(super) oam_data: u8,
+    pub(super) ppu_scroll: u8,
+    pub(super) ppu_addr: u8,
+    pub(super) ppu_addr_writed: bool,
+    pub(super) ppu_data: u8,
+    pub(super) ppu_data_writed: bool,
+    pub(super) ppu_data_readed: bool,
 }
 
 impl Registers {
-    pub fn read(&self, addr: u16) -> u8 {
+    pub fn read(&mut self, addr: u16) -> u8 {
         match addr % 0x8 {
             0x0 => {
-                warn!("Writing to PPUCTRL is not allowed.");
+                warn!("Reading to PPUCTRL is not allowed.");
                 0
             }
             0x1 => {
-                warn!("Writing to PPUMASK is not allowed.");
+                warn!("Reading to PPUMASK is not allowed.");
                 0
             }
             0x2 => self.ppu_status,
             0x3 => {
-                warn!("Writing to OAMADDR is not allowed.");
+                warn!("Reading to OAMADDR is not allowed.");
                 0
             }
             0x4 => self.oam_data,
             0x5 => {
-                warn!("Writing to PPUSCROLL is not allowed.");
+                warn!("Reading to PPUSCROLL is not allowed.");
                 0
             }
             0x6 => {
-                warn!("Writing to PPUADDR is not allowed.");
+                warn!("Reading to PPUADDR is not allowed.");
                 0
             }
-            0x7 => self.ppu_data,
+            0x7 => {
+                self.ppu_data_readed = true;
+                self.ppu_data
+            }
             _ => unreachable!(),
         }
     }
@@ -63,8 +54,14 @@ impl Registers {
             0x3 => self.oam_addr = value,
             0x4 => self.oam_data = value,
             0x5 => self.ppu_scroll = value,
-            0x6 => self.ppu_addr = value,
-            0x7 => self.ppu_data = value,
+            0x6 => {
+                self.ppu_addr_writed = true;
+                self.ppu_addr = value;
+            }
+            0x7 => {
+                self.ppu_data_writed = true;
+                self.ppu_data = value;
+            }
             _ => unreachable!(),
         }
     }

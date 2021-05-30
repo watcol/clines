@@ -18,7 +18,7 @@ impl<'a> CpuBus<'a> {
         }
     }
 
-    pub fn get_byte(&self, addr: u16) -> u8 {
+    pub fn get_byte(&mut self, addr: u16) -> u8 {
         match addr {
             0x0000..=0x1FFF => self.wram[(addr % 0x800) as usize],
             0x2000..=0x3FFF => self.ppu_registers.read(addr),
@@ -30,7 +30,7 @@ impl<'a> CpuBus<'a> {
         }
     }
 
-    pub fn get_word(&self, addr: u16) -> u16 {
+    pub fn get_word(&mut self, addr: u16) -> u16 {
         let lower = self.get_byte(addr) as u16;
         let upper = self.get_byte(addr + 1) as u16;
         (upper << 8) + lower
