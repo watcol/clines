@@ -1,5 +1,16 @@
 mod registers;
 
-pub use registers::PpuRegisters;
+pub use registers::Registers;
 
-pub fn run() {}
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Ppu {
+    pub registers: Registers,
+}
+
+impl Default for Ppu {
+    fn default() -> Self {
+        Self {
+            registers: Registers::default(),
+        }
+    }
+}

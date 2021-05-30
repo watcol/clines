@@ -1,5 +1,5 @@
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct PpuRegisters {
+pub struct Registers {
     pub ppu_ctrl: u8,
     pub ppu_mask: u8,
     pub ppu_status: u8,
@@ -10,7 +10,7 @@ pub struct PpuRegisters {
     pub ppu_data: u8,
 }
 
-impl Default for PpuRegisters {
+impl Default for Registers {
     fn default() -> Self {
         Self {
             ppu_ctrl: 0,
@@ -25,7 +25,7 @@ impl Default for PpuRegisters {
     }
 }
 
-impl PpuRegisters {
+impl Registers {
     pub fn read(&self, addr: u16) -> u8 {
         match addr % 0x8 {
             0x0 => {

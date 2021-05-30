@@ -1,5 +1,5 @@
 use super::Registers;
-use crate::nes::{Cpu, PpuRegisters, Rom};
+use crate::nes::{ppu::Registers as PpuRegisters, Cpu, Ppu, Rom};
 
 pub struct CpuBus<'a> {
     pub registers: &'a mut Registers,
@@ -9,10 +9,10 @@ pub struct CpuBus<'a> {
 }
 
 impl<'a> CpuBus<'a> {
-    pub fn new(cpu: &'a mut Cpu, rom: &'a Rom, ppu_reg: &'a mut PpuRegisters) -> Self {
+    pub fn new(cpu: &'a mut Cpu, rom: &'a Rom, ppu: &'a mut Ppu) -> Self {
         Self {
             registers: &mut cpu.registers,
-            ppu_registers: ppu_reg,
+            ppu_registers: &mut ppu.registers,
             wram: &mut cpu.wram,
             prg_rom: &rom.prg_rom,
         }

@@ -3,7 +3,7 @@ mod ppu;
 mod rom;
 
 use cpu::Cpu;
-use ppu::PpuRegisters;
+use ppu::Ppu;
 pub use rom::Rom;
 use std::path::Path;
 
@@ -11,7 +11,7 @@ use std::path::Path;
 pub struct Nes {
     rom: Rom,
     cpu: Cpu,
-    ppu_registers: PpuRegisters,
+    ppu: Ppu,
 }
 
 impl Nes {
@@ -19,7 +19,7 @@ impl Nes {
         Ok(Self {
             rom: Rom::from_path(path)?,
             cpu: Cpu::default(),
-            ppu_registers: PpuRegisters::default(),
+            ppu: Ppu::default(),
         })
     }
 
@@ -31,7 +31,7 @@ impl Nes {
 
     pub fn run_loop_inner(&mut self) -> anyhow::Result<()> {
         loop {
-            self.cpu.run(&self.rom, &mut self.ppu_registers)?;
+            self.cpu.run(&self.rom, &mut self.ppu)?;
         }
     }
 }
