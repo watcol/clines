@@ -24,8 +24,12 @@ pub struct Ppu {
 }
 
 impl Ppu {
-    pub fn run(&mut self, rom: &Rom) {
+    pub fn run(&mut self, rom: &Rom, cycle: u8) {
         let mut bus = PpuBus::new(self, rom);
         bus.sync_registers();
+        let _line = match bus.ctx.add_cycle(cycle) {
+            Some(line) => line,
+            None => return,
+        };
     }
 }

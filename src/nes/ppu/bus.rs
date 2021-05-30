@@ -3,7 +3,7 @@ use crate::nes::Rom;
 
 pub struct PpuBus<'a> {
     pub registers: &'a mut Registers,
-    ctx: &'a mut Context,
+    pub ctx: &'a mut Context,
     pattern_table: &'a [u8],
     name_table0: &'a mut NameTable,
     attr_table0: &'a mut AttrTable,

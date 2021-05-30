@@ -31,8 +31,8 @@ impl Nes {
 
     pub fn run_loop_inner(&mut self) -> anyhow::Result<()> {
         loop {
-            self.cpu.run(&self.rom, &mut self.ppu)?;
-            self.ppu.run(&self.rom);
+            let cycle = self.cpu.run(&self.rom, &mut self.ppu)?;
+            self.ppu.run(&self.rom, cycle * 3);
         }
     }
 }
