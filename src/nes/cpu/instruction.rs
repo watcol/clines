@@ -580,14 +580,16 @@ impl Addressing {
                 false,
             ),
             Self::Absolute => (Operand::Address(bus.increment_word()), false),
-            Self::AbsoluteX => (
-                Operand::Address(bus.increment_word() + (bus.registers.X as u16)),
-                false,
-            ),
-            Self::AbsoluteY => (
-                Operand::Address(bus.increment_word() + (bus.registers.Y as u16)),
-                false,
-            ),
+            Self::AbsoluteX => {
+                let base = bus.increment_word();
+                let addr = base + bus.registers.X as u16;
+                (Operand::Address(addr), base / 0x100 != addr / 0x100)
+            }
+            Self::AbsoluteY => {
+                let base = bus.increment_word();
+                let addr = base + bus.registers.Y as u16;
+                (Operand::Address(addr), base / 0x100 != addr / 0x100)
+            }
             Self::Relative => {
                 let offset = bus.increment_byte() as i8;
                 (
@@ -604,11 +606,10 @@ impl Addressing {
                 (Operand::Address(bus.get_word(addr as u16)), false)
             }
             Self::IndirectY => {
-                let addr = bus.increment_word();
-                (
-                    Operand::Address(bus.get_word(addr) + (bus.registers.Y as u16)),
-                    false,
-                )
+                let base_addr = bus.increment_word();
+                let base = bus.get_word(base_addr);
+                let addr = base + bus.registers.Y as u16;
+                (Operand::Address(addr), base / 0x100 != addr / 0x100)
             }
         }
     }
