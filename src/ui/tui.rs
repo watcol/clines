@@ -44,11 +44,11 @@ impl Ui for Tui {
             for x in 0..width {
                 let px1 = *display.get_pixel(x, y * 2);
                 let px2 = *display.get_pixel(x, y * 2 + 1);
-                if fg_color != Some(px1) {
-                    fg_color = Some(px1);
+                if bg_color != Some(px1) {
+                    bg_color = Some(px1);
                     queue!(
                         self.buf,
-                        SetForegroundColor(Color::Rgb {
+                        SetBackgroundColor(Color::Rgb {
                             r: px1.0[0],
                             g: px1.0[1],
                             b: px1.0[2],
@@ -56,11 +56,11 @@ impl Ui for Tui {
                     )?;
                 }
 
-                if bg_color != Some(px2) {
-                    bg_color = Some(px2);
+                if fg_color != Some(px2) {
+                    fg_color = Some(px2);
                     queue!(
                         self.buf,
-                        SetBackgroundColor(Color::Rgb {
+                        SetForegroundColor(Color::Rgb {
                             r: px2.0[0],
                             g: px2.0[1],
                             b: px2.0[2],
@@ -68,7 +68,7 @@ impl Ui for Tui {
                     )?;
                 }
 
-                queue!(self.buf, Print('▀'))?;
+                queue!(self.buf, Print('▄'))?;
             }
 
             fg_color = None;
