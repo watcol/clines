@@ -7,16 +7,32 @@ pub use instruction::{Addressing, Instruction, Opecode};
 pub use opecodes::OPECODES;
 pub use registers::{Registers, Status};
 
-use super::Nes;
+use super::{PpuRegisters, Rom};
 use bus::CpuBus;
 
-pub fn run(nes: &mut Nes) -> anyhow::Result<u8> {
-    let mut bus = CpuBus::new(nes);
-    let opecode = OPECODES[bus.increment_byte() as usize];
-    opecode.exec(&mut bus)
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Cpu {
+    registers: Registers,
+    wram: [u8; 0x800],
 }
 
-pub fn reset(nes: &mut Nes) {
-    let mut bus = CpuBus::new(nes);
-    bus.registers.PC = bus.get_word(0xfffc);
+impl Default for Cpu {
+    fn default() -> Self {
+        Self {
+            registers: Registers::default(),
+            wram: [0; 0x800],
+        }
+    }
+}
+impl Cpu {
+    pub fn run(&mut self, rom: &Rom, ppu_reg: &mut PpuRegisters) -> anyhow::Result<u8> {
+        let mut bus = CpuBus::new(self, rom, ppu_reg);
+        let opecode = OPECODES[bus.increment_byte() as usize];
+        opecode.exec(&mut bus)
+    }
+
+    pub fn reset(&mut self, rom: &Rom, ppu_reg: &mut PpuRegisters) {
+        let mut bus = CpuBus::new(self, rom, ppu_reg);
+        bus.registers.PC = bus.get_word(0xfffc);
+    }
 }

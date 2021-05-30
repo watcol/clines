@@ -1,6 +1,5 @@
 use super::Registers;
-use crate::nes::ppu::PpuRegisters;
-use crate::nes::Nes;
+use crate::nes::{Cpu, PpuRegisters, Rom};
 
 pub struct CpuBus<'a> {
     pub registers: &'a mut Registers,
@@ -10,12 +9,12 @@ pub struct CpuBus<'a> {
 }
 
 impl<'a> CpuBus<'a> {
-    pub fn new(nes: &'a mut Nes) -> Self {
+    pub fn new(cpu: &'a mut Cpu, rom: &'a Rom, ppu_reg: &'a mut PpuRegisters) -> Self {
         Self {
-            registers: &mut nes.cpu_registers,
-            ppu_registers: &mut nes.ppu_registers,
-            wram: &mut nes.wram,
-            prg_rom: &nes.rom.prg_rom,
+            registers: &mut cpu.registers,
+            ppu_registers: ppu_reg,
+            wram: &mut cpu.wram,
+            prg_rom: &rom.prg_rom,
         }
     }
 
