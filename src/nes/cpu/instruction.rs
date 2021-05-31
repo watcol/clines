@@ -11,7 +11,9 @@ pub struct Opecode {
 impl Opecode {
     pub fn exec(&self, bus: &mut CpuBus) -> anyhow::Result<u8> {
         let (operand, page_corssed) = self.addr.operand(bus);
+        debug!("{:?} {:?}", self.inst, operand);
         let branched = self.inst.exec(bus, operand)?;
+        debug!("{:#?}\n", bus.registers);
         let cycle = self.cycle
             + ((page_corssed && self.add_cycle) as u8)
             + ((branched && self.add_cycle) as u8);
@@ -287,7 +289,7 @@ impl Instruction {
             }
             Self::RTS => {
                 let addr = bus.pop_word();
-                bus.registers.PC = addr;
+                bus.registers.PC = addr + 1;
             }
             // Interruptions
             Self::BRK => {
@@ -326,38 +328,38 @@ impl Instruction {
             // Increment/Decrement
             Self::INC => {
                 let addr = operand.get_address()?;
-                let res = bus.get_byte(addr) + 1;
+                let (res, _) = bus.get_byte(addr).overflowing_add(1);
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
                 bus.set_byte(addr, res);
             }
             Self::DEC => {
                 let addr = operand.get_address()?;
-                let res = bus.get_byte(addr) - 1;
+                let (res, _) = bus.get_byte(addr).overflowing_sub(1);
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
                 bus.set_byte(addr, res);
             }
             Self::INX => {
-                let res = bus.registers.X + 1;
+                let (res, _) = bus.registers.X.overflowing_add(1);
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
                 bus.registers.X = res;
             }
             Self::DEX => {
-                let res = bus.registers.X - 1;
+                let (res, _) = bus.registers.X.overflowing_sub(1);
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
                 bus.registers.X = res;
             }
             Self::INY => {
-                let res = bus.registers.Y + 1;
+                let (res, _) = bus.registers.Y.overflowing_add(1);
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
                 bus.registers.Y = res;
             }
             Self::DEY => {
-                let res = bus.registers.Y - 1;
+                let (res, _) = bus.registers.Y.overflowing_sub(1);
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
                 bus.registers.Y = res;
@@ -472,7 +474,7 @@ impl Instruction {
             Self::DCP => {
                 let addr = operand.get_address()?;
                 let val = bus.get_byte(addr);
-                let res = val - 1;
+                let (res, _) = val.overflowing_sub(1);
                 bus.set_byte(addr, res);
                 let res = bus.registers.A as i16 - val as i16;
                 bus.registers.P.carry = res >= 0;
@@ -572,7 +574,7 @@ impl Addressing {
             Self::Immediate => (Operand::Value(bus.increment_byte()), false),
             Self::ZeroPage => (Operand::Address(bus.increment_byte() as u16), false),
             Self::ZeroPageX => (
-                Operand::Address((bus.increment_byte() + bus.registers.X) as u16),
+                Operand::Address(bus.increment_byte().overflowing_add(bus.registers.X).0 as u16),
                 false,
             ),
             Self::ZeroPageY => (
@@ -602,11 +604,11 @@ impl Addressing {
                 (Operand::Address(bus.get_word(addr)), false)
             }
             Self::IndirectX => {
-                let addr = bus.increment_byte() + bus.registers.X;
+                let (addr, _) = bus.increment_byte().overflowing_add(bus.registers.X);
                 (Operand::Address(bus.get_word(addr as u16)), false)
             }
             Self::IndirectY => {
-                let base_addr = bus.increment_word();
+                let base_addr = bus.increment_byte() as u16;
                 let base = bus.get_word(base_addr);
                 let addr = base + bus.registers.Y as u16;
                 (Operand::Address(addr), base / 0x100 != addr / 0x100)

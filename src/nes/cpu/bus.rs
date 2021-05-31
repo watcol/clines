@@ -26,7 +26,7 @@ impl<'a> CpuBus<'a> {
                 warn!("Address {:#06x} is unimplemented", addr);
                 0
             }
-            _ => self.prg_rom[(addr - 0x8000) as usize],
+            _ => self.prg_rom[((addr - 0x8000) as usize) % self.prg_rom.len()],
         }
     }
 
