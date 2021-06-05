@@ -13,11 +13,12 @@ fn main() {
     fmtlog::new(
         fmtlog::Config::new()
             .level(fmtlog::LevelFilter::Debug)
+            .format(fmtlog::formats::SIMPLE2)
             .output("log.txt"),
     )
     .set()
     .unwrap();
-    let ui = ui::Tui::new().unwrap();
+    let ui = ui::Gui::new().unwrap();
     let mut nes = Nes::from_path(args().nth(1).unwrap(), ui).unwrap();
     nes.run_loop();
 }

@@ -10,10 +10,16 @@ pub struct Opecode {
 
 impl Opecode {
     pub fn exec(&self, bus: &mut CpuBus) -> anyhow::Result<u8> {
-        let (operand, page_corssed) = self.addr.operand(bus);
-        debug!("{:?} {:?}", self.inst, operand);
+        let pc = bus.registers.PC - 1;
+        let a = bus.registers.A;
+        let x = bus.registers.X;
+        let y = bus.registers.Y;
+        let (operand, page_corssed, asm) = self.addr.operand(bus);
         let branched = self.inst.exec(bus, operand)?;
-        debug!("{:#?}\n", bus.registers);
+        debug!(
+            "{:04X} {:?} {:<10} A:{:02X} X:{:02X} Y:{:02X}",
+            pc, self.inst, asm, a, x, y
+        );
         let cycle = self.cycle
             + ((page_corssed && self.add_cycle) as u8)
             + ((branched && self.add_cycle) as u8);
@@ -452,9 +458,10 @@ impl Instruction {
                 let addr = operand.get_address()?;
                 let acc = bus.get_byte(addr);
                 let res = (acc >> 1) | (bus.registers.P.carry as u8 * 0x80);
+                bus.registers.P.carry = acc & 0x1 == 0x1;
                 bus.set_byte(addr, res);
                 let acc = bus.registers.A;
-                let op = res;
+                let op = bus.get_byte(addr);
                 let (res, carry1) = acc.overflowing_add(op);
                 let (res, carry2) = res.overflowing_add(bus.registers.P.carry as u8);
                 bus.registers.P.overflow = ((acc ^ op) & 0x80 == 0) && ((acc ^ res) & 0x80 == 0x80);
@@ -567,51 +574,90 @@ pub enum Addressing {
 }
 
 impl Addressing {
-    fn operand(&self, bus: &mut CpuBus) -> (Operand, bool) {
+    fn operand(&self, bus: &mut CpuBus) -> (Operand, bool, String) {
         match self {
-            Self::Implied => (Operand::None, false),
-            Self::Accumulator => (Operand::Accumulator, false),
-            Self::Immediate => (Operand::Value(bus.increment_byte()), false),
-            Self::ZeroPage => (Operand::Address(bus.increment_byte() as u16), false),
-            Self::ZeroPageX => (
-                Operand::Address(bus.increment_byte().overflowing_add(bus.registers.X).0 as u16),
-                false,
-            ),
-            Self::ZeroPageY => (
-                Operand::Address((bus.increment_byte().overflowing_add(bus.registers.Y).0) as u16),
-                false,
-            ),
-            Self::Absolute => (Operand::Address(bus.increment_word()), false),
+            Self::Implied => (Operand::None, false, String::new()),
+            Self::Accumulator => (Operand::Accumulator, false, String::new()),
+            Self::Immediate => {
+                let val = bus.increment_byte();
+                (Operand::Value(val), false, format!("#{:02X}", val))
+            }
+            Self::ZeroPage => {
+                let addr = bus.increment_byte() as u16;
+                (Operand::Address(addr), false, format!("{:02X}", addr))
+            }
+            Self::ZeroPageX => {
+                let addr = bus.increment_byte();
+                (
+                    Operand::Address(addr.overflowing_add(bus.registers.X).0 as u16),
+                    false,
+                    format!("{:02X}, X", addr),
+                )
+            }
+            Self::ZeroPageY => {
+                let addr = bus.increment_byte();
+                (
+                    Operand::Address(addr.overflowing_add(bus.registers.Y).0 as u16),
+                    false,
+                    format!("{:02X}, Y", addr),
+                )
+            }
+            Self::Absolute => {
+                let addr = bus.increment_word();
+                (Operand::Address(addr), false, format!("{:04X}", addr))
+            }
             Self::AbsoluteX => {
                 let base = bus.increment_word();
                 let addr = base + bus.registers.X as u16;
-                (Operand::Address(addr), base / 0x100 != addr / 0x100)
+                (
+                    Operand::Address(addr),
+                    base / 0x100 != addr / 0x100,
+                    format!("{:04X}, X", base),
+                )
             }
             Self::AbsoluteY => {
                 let base = bus.increment_word();
                 let (addr, _) = base.overflowing_add(bus.registers.Y as u16);
-                (Operand::Address(addr), base / 0x100 != addr / 0x100)
+                (
+                    Operand::Address(addr),
+                    base / 0x100 != addr / 0x100,
+                    format!("{:04X}, X", base),
+                )
             }
             Self::Relative => {
                 let offset = bus.increment_byte() as i8;
                 (
                     Operand::Address((bus.registers.PC as i16 + offset as i16) as u16),
                     false,
+                    format!("{:02X}", offset),
                 )
             }
             Self::Indirect => {
                 let addr = bus.increment_word();
-                (Operand::Address(bus.get_word(addr)), false)
+                (
+                    Operand::Address(bus.get_word(addr)),
+                    false,
+                    format!("({:04X})", addr),
+                )
             }
             Self::IndirectX => {
-                let (addr, _) = bus.increment_byte().overflowing_add(bus.registers.X);
-                (Operand::Address(bus.get_word(addr as u16)), false)
+                let base = bus.increment_byte();
+                let (addr, _) = base.overflowing_add(bus.registers.X);
+                (
+                    Operand::Address(bus.get_word_page(addr)),
+                    false,
+                    format!("({:02X}, X)", base),
+                )
             }
             Self::IndirectY => {
                 let base_addr = bus.increment_byte();
-                let base = bus.get_word(base_addr as u16);
+                let base = bus.get_word_page(base_addr);
                 let (addr, _) = base.overflowing_add(bus.registers.Y as u16);
-                (Operand::Address(addr), base / 0x100 != addr / 0x100)
+                (
+                    Operand::Address(addr),
+                    base / 0x100 != addr / 0x100,
+                    format!("({:02X}), Y", base_addr),
+                )
             }
         }
     }

@@ -19,7 +19,7 @@ impl<'a> CpuBus<'a> {
     }
 
     pub fn get_byte(&mut self, addr: u16) -> u8 {
-        match addr {
+        let res = match addr {
             0x0000..=0x1FFF => self.wram[(addr % 0x800) as usize],
             0x2000..=0x3FFF => self.ppu_registers.read(addr),
             0x4000..=0x7FFF => {
@@ -27,7 +27,9 @@ impl<'a> CpuBus<'a> {
                 0
             }
             _ => self.prg_rom[((addr - 0x8000) as usize) % self.prg_rom.len()],
-        }
+        };
+        trace!("Get {:04X} (= {:02x})", addr, res);
+        res
     }
 
     pub fn get_word(&mut self, addr: u16) -> u16 {
@@ -36,7 +38,14 @@ impl<'a> CpuBus<'a> {
         (upper << 8) + lower
     }
 
+    pub fn get_word_page(&mut self, addr: u8) -> u16 {
+        let lower = self.get_byte(addr as u16) as u16;
+        let upper = self.get_byte(addr.overflowing_add(1).0 as u16) as u16;
+        (upper << 8) + lower
+    }
+
     pub fn set_byte(&mut self, addr: u16, value: u8) {
+        trace!("Set {:04X} = {:02x}", addr, value);
         match addr {
             0x0000..=0x1FFF => self.wram[(addr % 0x800) as usize] = value,
             0x2000..=0x3FFF => self.ppu_registers.write(addr, value),
