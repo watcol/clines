@@ -418,7 +418,7 @@ impl Instruction {
             Self::SLO => {
                 let addr = operand.get_address()?;
                 let acc = bus.get_byte(addr);
-                let res = acc * 2;
+                let (res, _) = acc.overflowing_mul(2);
                 bus.registers.P.carry = acc & 0x80 == 0x80;
                 bus.set_byte(addr, res);
                 let res = bus.registers.A | res;
@@ -484,7 +484,7 @@ impl Instruction {
             Self::ISC => {
                 let addr = operand.get_address()?;
                 let val = bus.get_byte(addr);
-                let res = val + 1;
+                let (res, _) = val.overflowing_add(1);
                 bus.set_byte(addr, res);
                 let acc = bus.registers.A;
                 let (res, carry1) = acc.overflowing_sub(val);
@@ -578,7 +578,7 @@ impl Addressing {
                 false,
             ),
             Self::ZeroPageY => (
-                Operand::Address((bus.increment_byte() + bus.registers.Y) as u16),
+                Operand::Address((bus.increment_byte().overflowing_add(bus.registers.Y).0) as u16),
                 false,
             ),
             Self::Absolute => (Operand::Address(bus.increment_word()), false),
@@ -589,7 +589,7 @@ impl Addressing {
             }
             Self::AbsoluteY => {
                 let base = bus.increment_word();
-                let addr = base + bus.registers.Y as u16;
+                let (addr, _) = base.overflowing_add(bus.registers.Y as u16);
                 (Operand::Address(addr), base / 0x100 != addr / 0x100)
             }
             Self::Relative => {
@@ -608,9 +608,9 @@ impl Addressing {
                 (Operand::Address(bus.get_word(addr as u16)), false)
             }
             Self::IndirectY => {
-                let base_addr = bus.increment_byte() as u16;
-                let base = bus.get_word(base_addr);
-                let addr = base + bus.registers.Y as u16;
+                let base_addr = bus.increment_byte();
+                let base = bus.get_word(base_addr as u16);
+                let (addr, _) = base.overflowing_add(bus.registers.Y as u16);
                 (Operand::Address(addr), base / 0x100 != addr / 0x100)
             }
         }
