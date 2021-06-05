@@ -795,7 +795,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0x71
     Opecode {
         inst: Instruction::ADC,
-        addr: Addressing::IndirectX,
+        addr: Addressing::IndirectY,
         cycle: 6,
         add_cycle: true,
     },

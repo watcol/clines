@@ -40,7 +40,7 @@ impl Default for Status {
             negative: false,
             overflow: false,
             reserved: true,
-            break_mode: true,
+            break_mode: false,
             decimal_mode: false,
             interrupt: true,
             zero: false,

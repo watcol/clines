@@ -14,11 +14,12 @@ impl Opecode {
         let a = bus.registers.A;
         let x = bus.registers.X;
         let y = bus.registers.Y;
+        let p = bus.registers.P.as_u8();
         let (operand, page_corssed, asm) = self.addr.operand(bus);
         let branched = self.inst.exec(bus, operand)?;
         debug!(
-            "{:04X} {:?} {:<10} A:{:02X} X:{:02X} Y:{:02X}",
-            pc, self.inst, asm, a, x, y
+            "{:04X} {:?} {:<10} A:{:02X} X:{:02X} Y:{:02X} P:{:02X}",
+            pc, self.inst, asm, a, x, y, p,
         );
         let cycle = self.cycle
             + ((page_corssed && self.add_cycle) as u8)
@@ -132,7 +133,7 @@ impl Instruction {
                 let (res, carry2) = res.overflowing_sub((!bus.registers.P.carry) as u8);
                 bus.registers.P.overflow =
                     ((acc ^ op) & 0x80 == 0x80) && ((acc ^ res) & 0x80 == 0x80);
-                bus.registers.P.carry = carry1 || carry2;
+                bus.registers.P.carry = !(carry1 || carry2);
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
                 bus.registers.A = res;

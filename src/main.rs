@@ -12,7 +12,7 @@ pub type Display = image::RgbImage;
 fn main() {
     fmtlog::new(
         fmtlog::Config::new()
-            .level(fmtlog::LevelFilter::Debug)
+            .level(fmtlog::LevelFilter::Trace)
             .format(fmtlog::formats::SIMPLE2)
             .output("log.txt"),
     )
