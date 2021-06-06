@@ -438,7 +438,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0x3e
     Opecode {
         inst: Instruction::ROL,
-        addr: Addressing::Absolute,
+        addr: Addressing::AbsoluteX,
         cycle: 7,
         add_cycle: false,
     },
@@ -473,15 +473,15 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0x43 (undocumented)
     Opecode {
         inst: Instruction::SRE,
-        addr: Addressing::IndirectY,
+        addr: Addressing::IndirectX,
         cycle: 3,
         add_cycle: false,
     },
     // 0x44 (undocumented)
     Opecode {
-        inst: Instruction::BRK,
-        addr: Addressing::Implied,
-        cycle: 0,
+        inst: Instruction::NOP,
+        addr: Addressing::ZeroPage,
+        cycle: 3,
         add_cycle: false,
     },
     // 0x45
@@ -585,7 +585,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0x53 (undocumented)
     Opecode {
         inst: Instruction::SRE,
-        addr: Addressing::IndirectX,
+        addr: Addressing::IndirectY,
         cycle: 8,
         add_cycle: false,
     },
@@ -647,7 +647,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     },
     // 0x5c (undocumented)
     Opecode {
-        inst: Instruction::SRE,
+        inst: Instruction::NOP,
         addr: Addressing::AbsoluteX,
         cycle: 4,
         add_cycle: true,
@@ -1509,7 +1509,7 @@ pub static OPECODES: [Opecode; 0x100] = [
     // 0xd7 (undocumented)
     Opecode {
         inst: Instruction::DCP,
-        addr: Addressing::ZeroPage,
+        addr: Addressing::ZeroPageX,
         cycle: 6,
         add_cycle: false,
     },

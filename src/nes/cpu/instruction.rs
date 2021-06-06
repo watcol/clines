@@ -402,11 +402,36 @@ impl Instruction {
             Self::STX => bus.set_byte(operand.get_address()?, bus.registers.X),
             Self::STY => bus.set_byte(operand.get_address()?, bus.registers.Y),
             // Transformations
-            Self::TAX => bus.registers.X = bus.registers.A,
-            Self::TXA => bus.registers.A = bus.registers.X,
-            Self::TAY => bus.registers.Y = bus.registers.A,
-            Self::TYA => bus.registers.A = bus.registers.Y,
-            Self::TSX => bus.registers.X = bus.registers.S,
+            Self::TAX => {
+                let val = bus.registers.A;
+                bus.registers.P.negative = val & 0x80 == 0x80;
+                bus.registers.P.zero = val == 0;
+                bus.registers.X = val;
+            }
+            Self::TXA => {
+                let val = bus.registers.X;
+                bus.registers.P.negative = val & 0x80 == 0x80;
+                bus.registers.P.zero = val == 0;
+                bus.registers.A = val;
+            }
+            Self::TAY => {
+                let val = bus.registers.A;
+                bus.registers.P.negative = val & 0x80 == 0x80;
+                bus.registers.P.zero = val == 0;
+                bus.registers.Y = val;
+            }
+            Self::TYA => {
+                let val = bus.registers.Y;
+                bus.registers.P.negative = val & 0x80 == 0x80;
+                bus.registers.P.zero = val == 0;
+                bus.registers.A = val;
+            }
+            Self::TSX => {
+                let val = bus.registers.S;
+                bus.registers.P.negative = val & 0x80 == 0x80;
+                bus.registers.P.zero = val == 0;
+                bus.registers.X = val;
+            }
             Self::TXS => bus.registers.S = bus.registers.X,
             // Stack controls
             Self::PHA => bus.push_byte(bus.registers.A)?,
@@ -471,7 +496,7 @@ impl Instruction {
                 bus.registers.P.zero = res == 0;
                 bus.registers.A = res;
             }
-            Self::SAX => bus.set_byte(operand.get_address()?, bus.registers.A & bus.registers.Y),
+            Self::SAX => bus.set_byte(operand.get_address()?, bus.registers.A & bus.registers.X),
             Self::LAX => {
                 let val = operand.get_byte(bus)?;
                 bus.registers.P.negative = val & 0x80 == 0x80;
@@ -484,7 +509,7 @@ impl Instruction {
                 let val = bus.get_byte(addr);
                 let (res, _) = val.overflowing_sub(1);
                 bus.set_byte(addr, res);
-                let res = bus.registers.A as i16 - val as i16;
+                let res = bus.registers.A as i16 - res as i16;
                 bus.registers.P.carry = res >= 0;
                 bus.registers.P.negative = (res as u8) & 0x80 == 0x80;
                 bus.registers.P.zero = (res as u8) == 0;
@@ -495,11 +520,11 @@ impl Instruction {
                 let (res, _) = val.overflowing_add(1);
                 bus.set_byte(addr, res);
                 let acc = bus.registers.A;
-                let (res, carry1) = acc.overflowing_sub(val);
+                let (res, carry1) = acc.overflowing_sub(res);
                 let (res, carry2) = res.overflowing_sub((!bus.registers.P.carry) as u8);
                 bus.registers.P.overflow =
                     ((acc ^ val) & 0x80 == 0x80) && ((acc ^ res) & 0x80 == 0x80);
-                bus.registers.P.carry = carry1 || carry2;
+                bus.registers.P.carry = !(carry1 || carry2);
                 bus.registers.P.negative = res & 0x80 == 0x80;
                 bus.registers.P.zero = res == 0;
                 bus.registers.A = res;
@@ -636,7 +661,7 @@ impl Addressing {
             Self::Indirect => {
                 let addr = bus.increment_word();
                 (
-                    Operand::Address(bus.get_word(addr)),
+                    Operand::Address(bus.get_word_page(addr)),
                     false,
                     format!("({:04X})", addr),
                 )
@@ -645,14 +670,14 @@ impl Addressing {
                 let base = bus.increment_byte();
                 let (addr, _) = base.overflowing_add(bus.registers.X);
                 (
-                    Operand::Address(bus.get_word_page(addr)),
+                    Operand::Address(bus.get_word_page(addr as u16)),
                     false,
                     format!("({:02X}, X)", base),
                 )
             }
             Self::IndirectY => {
                 let base_addr = bus.increment_byte();
-                let base = bus.get_word_page(base_addr);
+                let base = bus.get_word_page(base_addr as u16);
                 let (addr, _) = base.overflowing_add(bus.registers.Y as u16);
                 (
                     Operand::Address(addr),

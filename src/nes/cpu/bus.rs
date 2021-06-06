@@ -38,9 +38,14 @@ impl<'a> CpuBus<'a> {
         (upper << 8) + lower
     }
 
-    pub fn get_word_page(&mut self, addr: u8) -> u16 {
-        let lower = self.get_byte(addr as u16) as u16;
-        let upper = self.get_byte(addr.overflowing_add(1).0 as u16) as u16;
+    pub fn get_word_page(&mut self, addr: u16) -> u16 {
+        let lower = self.get_byte(addr) as u16;
+        let upper_addr = if addr % 0x100 == 0xff {
+            addr - 0xff
+        } else {
+            addr + 1
+        };
+        let upper = self.get_byte(upper_addr) as u16;
         (upper << 8) + lower
     }
 

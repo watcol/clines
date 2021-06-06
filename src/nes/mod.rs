@@ -18,15 +18,22 @@ pub struct Nes<U> {
 
 impl<U: Ui> Nes<U> {
     pub fn from_path<P: AsRef<Path>>(path: P, ui: U) -> anyhow::Result<Self> {
-        Ok(Self {
+        let mut res = Self {
             rom: Rom::from_path(path)?,
             cpu: Cpu::default(),
             ppu: Ppu::default(),
             ui,
-        })
+        };
+        res.reset();
+        Ok(res)
+    }
+
+    pub fn reset(&mut self) {
+        self.cpu.reset(&self.rom, &mut self.ppu);
     }
 
     pub fn run_loop(&mut self) {
+        self.cpu.reset(&self.rom, &mut self.ppu);
         self.run_loop_inner().unwrap_or_else(|e| {
             println!("{}", e);
         })
