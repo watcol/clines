@@ -28,7 +28,6 @@ impl<'a> CpuBus<'a> {
             }
             _ => self.prg_rom[((addr - 0x8000) as usize) % self.prg_rom.len()],
         };
-        trace!("Get {:04X} (= {:02x})", addr, res);
         res
     }
 
@@ -50,7 +49,6 @@ impl<'a> CpuBus<'a> {
     }
 
     pub fn set_byte(&mut self, addr: u16, value: u8) {
-        trace!("Set {:04X} = {:02x}", addr, value);
         match addr {
             0x0000..=0x1FFF => self.wram[(addr % 0x800) as usize] = value,
             0x2000..=0x3FFF => self.ppu_registers.write(addr, value),

@@ -10,8 +10,14 @@ use std::env::args;
 pub type Display = image::RgbImage;
 
 fn main() {
-    fmtlog::default().set().unwrap();
-    let ui = ui::Gui::new().unwrap();
+    fmtlog::new(
+        fmtlog::Config::new()
+            .level(fmtlog::LevelFilter::Debug)
+            .output("log.txt"),
+    )
+    .set()
+    .unwrap();
+    let ui = ui::Tui::new().unwrap();
     let mut nes = Nes::from_path(args().nth(1).unwrap(), ui).unwrap();
     nes.run_loop();
 }

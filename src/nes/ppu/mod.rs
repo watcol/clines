@@ -84,7 +84,11 @@ impl Ppu {
         if 10 <= self.lines && self.lines <= 242 && self.lines % 8 == 2 {
             Some(((self.lines - 2) / 8 - 1) as u8)
         } else if self.lines == 263 {
+            self.registers.ppu_status.vblank = false;
             self.lines = 0;
+            None
+        } else if self.lines == 243 {
+            self.registers.ppu_status.vblank = true;
             None
         } else {
             None

@@ -2,7 +2,7 @@
 pub struct Registers {
     pub(super) ppu_ctrl: u8,
     pub(super) ppu_mask: u8,
-    pub(super) ppu_status: u8,
+    pub(super) ppu_status: PpuStatus,
     pub(super) oam_addr: u8,
     pub(super) oam_data: u8,
     pub(super) ppu_scroll: u8,
@@ -24,7 +24,11 @@ impl Registers {
                 warn!("Reading to PPUMASK is not allowed.");
                 0
             }
-            0x2 => self.ppu_status,
+            0x2 => {
+                let res = self.ppu_status.as_u8();
+                self.ppu_status.vblank = false;
+                res
+            }
             0x3 => {
                 warn!("Reading to OAMADDR is not allowed.");
                 0
@@ -64,5 +68,18 @@ impl Registers {
             }
             _ => unreachable!(),
         }
+    }
+}
+
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub struct PpuStatus {
+    pub vblank: bool,
+    pub sprite_hit: bool,
+    pub sprite_overflow: bool,
+}
+
+impl PpuStatus {
+    pub fn as_u8(&self) -> u8 {
+        self.vblank as u8 * 0x80 + self.sprite_hit as u8 * 0x40 + self.sprite_overflow as u8 * 0x20
     }
 }
