@@ -1,4 +1,6 @@
-use super::{ColoredSprite, Display};
+use super::ColoredSprite;
+
+pub type Display = image::RgbImage;
 
 pub fn render(display: &mut Display, sprite: &ColoredSprite, x: u8, y: u8) {
     for i in 0..8 {

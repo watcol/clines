@@ -7,9 +7,9 @@ mod renderer;
 mod sprite;
 
 use crate::nes::Rom;
-use crate::Display;
 
 pub use registers::Registers;
+pub use renderer::Display;
 
 use attr_table::AttrTable;
 use bus::PpuBus;

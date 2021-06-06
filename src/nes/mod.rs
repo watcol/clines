@@ -1,11 +1,15 @@
 mod cpu;
+mod pad;
 mod ppu;
 mod rom;
+
+pub use pad::Button;
+pub use ppu::Display;
 
 use crate::ui::Ui;
 use cpu::Cpu;
 use ppu::Ppu;
-pub use rom::Rom;
+use rom::Rom;
 use std::path::Path;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -33,7 +37,6 @@ impl<U: Ui> Nes<U> {
     }
 
     pub fn run_loop(&mut self) {
-        self.cpu.reset(&self.rom, &mut self.ppu);
         self.run_loop_inner().unwrap_or_else(|e| {
             println!("{}", e);
         })
@@ -45,6 +48,13 @@ impl<U: Ui> Nes<U> {
             if let Some(display) = self.ppu.run(&self.rom, cycle * 3) {
                 self.ui.flush(&display)?;
             }
+
+            if self.ui.button_pressed(Button::Reset) {
+                self.reset();
+            } else if self.ui.button_pressed(Button::Quit) {
+                break;
+            }
         }
+        Ok(())
     }
 }

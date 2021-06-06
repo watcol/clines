@@ -1,27 +1,37 @@
 use std::io::{stderr, BufWriter, Stderr, Write};
 
 use super::Ui;
+use crate::nes::{Button, Display};
 use crossterm::{
     cursor::{Hide, MoveTo, RestorePosition, SavePosition, Show},
+    event::{poll, read},
     execute, queue,
     style::{Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor},
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{disable_raw_mode, enable_raw_mode},
 };
+use device_query::{DeviceState, Keycode};
+use std::time::Duration;
 
 pub struct Tui {
     buf: BufWriter<Stderr>,
+    state: DeviceState,
 }
 
 impl Tui {
     pub fn new() -> anyhow::Result<Self> {
         let mut buf = BufWriter::new(stderr());
+        enable_raw_mode()?;
         execute!(buf, EnterAlternateScreen, Hide, SavePosition)?;
-        Ok(Self { buf })
+        Ok(Self {
+            buf,
+            state: DeviceState::new(),
+        })
     }
 }
 
 impl Ui for Tui {
-    fn flush(&mut self, display: &crate::Display) -> anyhow::Result<()> {
+    fn flush(&mut self, display: &Display) -> anyhow::Result<()> {
         let (winwidth, winheight) = terminal::size()?;
         let width = display.width();
         let height = display.height();
@@ -82,10 +92,30 @@ impl Ui for Tui {
         self.buf.flush()?;
         Ok(())
     }
+
+    fn button_pressed(&self, button: Button) -> bool {
+        let key = match button {
+            Button::A => Keycode::Z,
+            Button::B => Keycode::X,
+            Button::Select => Keycode::Space,
+            Button::Start => Keycode::Enter,
+            Button::Up => Keycode::Up,
+            Button::Down => Keycode::Down,
+            Button::Left => Keycode::Left,
+            Button::Right => Keycode::Right,
+            Button::Quit => Keycode::Escape,
+            Button::Reset => Keycode::R,
+        };
+        self.state.query_keymap().contains(&key)
+    }
 }
 
 impl Drop for Tui {
     fn drop(&mut self) {
+        disable_raw_mode().unwrap();
+        while matches!(poll(Duration::from_millis(10)), Ok(true)) {
+            let _ = read();
+        }
         execute!(self.buf, LeaveAlternateScreen, Show, RestorePosition).unwrap();
     }
 }

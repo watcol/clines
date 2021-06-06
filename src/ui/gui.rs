@@ -1,5 +1,6 @@
 use super::Ui;
-use minifb::{Scale, ScaleMode, Window, WindowOptions};
+use crate::nes::{Button, Display};
+use minifb::{Key, Scale, ScaleMode, Window, WindowOptions};
 
 pub struct Gui {
     win: Window,
@@ -28,7 +29,7 @@ impl Gui {
 }
 
 impl Ui for Gui {
-    fn flush(&mut self, display: &crate::Display) -> anyhow::Result<()> {
+    fn flush(&mut self, display: &Display) -> anyhow::Result<()> {
         let buffer = display
             .enumerate_pixels()
             .map(|(_, _, rgb)| rgb2u32(*rgb))
@@ -39,5 +40,21 @@ impl Ui for Gui {
             display.height() as usize,
         )?;
         Ok(())
+    }
+
+    fn button_pressed(&self, button: Button) -> bool {
+        let key = match button {
+            Button::A => Key::Z,
+            Button::B => Key::X,
+            Button::Select => Key::Space,
+            Button::Start => Key::Enter,
+            Button::Up => Key::Up,
+            Button::Down => Key::Down,
+            Button::Left => Key::Left,
+            Button::Right => Key::Right,
+            Button::Quit => Key::Escape,
+            Button::Reset => Key::R,
+        };
+        self.win.is_key_down(key)
     }
 }
