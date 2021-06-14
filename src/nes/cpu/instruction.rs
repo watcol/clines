@@ -1,4 +1,4 @@
-use super::CpuBus;
+use super::{CpuBus, Ui};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Opecode {
@@ -9,7 +9,7 @@ pub struct Opecode {
 }
 
 impl Opecode {
-    pub fn exec(&self, bus: &mut CpuBus) -> anyhow::Result<u8> {
+    pub fn exec<U: Ui>(&self, bus: &mut CpuBus<U>) -> anyhow::Result<u8> {
         let pc = bus.registers.PC - 1;
         let a = bus.registers.A;
         let x = bus.registers.X;
@@ -111,7 +111,7 @@ pub enum Instruction {
 }
 
 impl Instruction {
-    fn exec(&self, bus: &mut CpuBus, operand: Operand) -> anyhow::Result<bool> {
+    fn exec<U: Ui>(&self, bus: &mut CpuBus<U>, operand: Operand) -> anyhow::Result<bool> {
         let mut branched = false;
         match self {
             // Arithmetic Operations
@@ -600,7 +600,7 @@ pub enum Addressing {
 }
 
 impl Addressing {
-    fn operand(&self, bus: &mut CpuBus) -> (Operand, bool, String) {
+    fn operand<U: Ui>(&self, bus: &mut CpuBus<U>) -> (Operand, bool, String) {
         match self {
             Self::Implied => (Operand::None, false, String::new()),
             Self::Accumulator => (Operand::Accumulator, false, String::new()),
@@ -705,7 +705,7 @@ impl Operand {
         }
     }
 
-    fn get_byte(self, bus: &mut CpuBus) -> anyhow::Result<u8> {
+    fn get_byte<U: Ui>(self, bus: &mut CpuBus<U>) -> anyhow::Result<u8> {
         match self {
             Self::Accumulator => Ok(bus.registers.A),
             Self::Value(val) => Ok(val),

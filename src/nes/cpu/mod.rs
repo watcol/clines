@@ -7,7 +7,7 @@ pub use instruction::{Addressing, Instruction, Opecode};
 pub use opecodes::OPECODES;
 pub use registers::{Registers, Status};
 
-use super::{Ppu, Rom};
+use super::{Pad, Ppu, Rom, Ui};
 use bus::CpuBus;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -25,14 +25,20 @@ impl Default for Cpu {
     }
 }
 impl Cpu {
-    pub fn run(&mut self, rom: &Rom, ppu: &mut Ppu) -> anyhow::Result<u8> {
-        let mut bus = CpuBus::new(self, rom, ppu);
+    pub fn run<U: Ui>(
+        &mut self,
+        rom: &Rom,
+        ppu: &mut Ppu,
+        pad: &mut Pad,
+        ui: &U,
+    ) -> anyhow::Result<u8> {
+        let mut bus = CpuBus::new(self, rom, ppu, pad, ui);
         let opecode = OPECODES[bus.increment_byte() as usize];
         opecode.exec(&mut bus)
     }
 
-    pub fn reset(&mut self, rom: &Rom, ppu: &mut Ppu) {
-        let mut bus = CpuBus::new(self, rom, ppu);
+    pub fn reset<U: Ui>(&mut self, rom: &Rom, ppu: &mut Ppu, pad: &mut Pad, ui: &U) {
+        let mut bus = CpuBus::new(self, rom, ppu, pad, ui);
         bus.registers.PC = bus.get_word(0xfffc);
     }
 }

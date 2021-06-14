@@ -1,18 +1,28 @@
 use super::Registers;
-use crate::nes::{ppu::Registers as PpuRegisters, Cpu, Ppu, Rom};
+use crate::nes::{ppu::Registers as PpuRegisters, Cpu, Pad, Ppu, Rom, Ui};
 
-pub struct CpuBus<'a> {
+pub struct CpuBus<'a, U: Ui> {
     pub registers: &'a mut Registers,
     ppu_registers: &'a mut PpuRegisters,
+    pad: &'a mut Pad,
+    ui: &'a U,
     wram: &'a mut [u8; 0x800],
     prg_rom: &'a [u8],
 }
 
-impl<'a> CpuBus<'a> {
-    pub fn new(cpu: &'a mut Cpu, rom: &'a Rom, ppu: &'a mut Ppu) -> Self {
+impl<'a, U: Ui> CpuBus<'a, U> {
+    pub fn new(
+        cpu: &'a mut Cpu,
+        rom: &'a Rom,
+        ppu: &'a mut Ppu,
+        pad: &'a mut Pad,
+        ui: &'a U,
+    ) -> Self {
         Self {
             registers: &mut cpu.registers,
             ppu_registers: &mut ppu.registers,
+            pad,
+            ui,
             wram: &mut cpu.wram,
             prg_rom: &rom.prg_rom,
         }
@@ -22,6 +32,7 @@ impl<'a> CpuBus<'a> {
         let res = match addr {
             0x0000..=0x1FFF => self.wram[(addr % 0x800) as usize],
             0x2000..=0x3FFF => self.ppu_registers.read(addr),
+            0x4016 => self.pad.read(self.ui),
             0x4000..=0x7FFF => {
                 warn!("Address {:#06x} is unimplemented", addr);
                 0
@@ -52,6 +63,7 @@ impl<'a> CpuBus<'a> {
         match addr {
             0x0000..=0x1FFF => self.wram[(addr % 0x800) as usize] = value,
             0x2000..=0x3FFF => self.ppu_registers.write(addr, value),
+            0x4016 => self.pad.write(value),
             0x4000..=0x7FFF => warn!("Address {:#06x} is unimplemented", addr),
             _ => warn!("Writing to {:#06x} is not allowed.", addr),
         }
