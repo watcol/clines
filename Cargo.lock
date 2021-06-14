@@ -167,19 +167,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "clines"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "crossterm",
- "device_query",
- "fmtlog",
- "image",
- "log",
- "minifb",
-]
-
-[[package]]
 name = "cmake"
 version = "0.1.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -597,6 +584,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b9f1c5b025cda876f66ef43a113f91ebc9f4ccef34843000e0adf6ebbab84e21"
 dependencies = [
  "winapi",
+]
+
+[[package]]
+name = "nes-cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "crossterm",
+ "device_query",
+ "fmtlog",
+ "image",
+ "log",
+ "minifb",
 ]
 
 [[package]]
