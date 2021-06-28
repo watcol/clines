@@ -50,4 +50,9 @@ impl Pallete {
         let bgs = self.bg[id as usize];
         [self.universal_bg, bgs[0], bgs[1], bgs[2]]
     }
+
+    pub fn get_sprite_pallete(&self, id: u8) -> [u8; 4] {
+        let sprites = self.sprite[id as usize];
+        [self.universal_bg, sprites[0], sprites[1], sprites[2]]
+    }
 }

@@ -5,21 +5,24 @@ mod pallete;
 mod registers;
 mod renderer;
 mod sprite;
+mod tile;
 
 use crate::nes::Rom;
 
 pub use registers::Registers;
 pub use renderer::Display;
+pub use sprite::ObjectAttributeMemory;
 
 use attr_table::AttrTable;
 use bus::PpuBus;
 use name_table::NameTable;
 use pallete::Pallete;
-use sprite::{ColoredSprite, Sprite};
+use tile::{ColoredTile, Tile};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Ppu {
     pub registers: Registers,
+    pub oam: ObjectAttributeMemory,
     display: Display,
     cycle: u16,
     lines: u16,
@@ -27,6 +30,12 @@ pub struct Ppu {
     ppu_addr_tmp: Option<u8>,
     name_table0: NameTable,
     attr_table0: AttrTable,
+    name_table1: NameTable,
+    attr_table1: AttrTable,
+    name_table2: NameTable,
+    attr_table2: AttrTable,
+    name_table3: NameTable,
+    attr_table3: AttrTable,
     pallete: Pallete,
 }
 
@@ -39,8 +48,15 @@ impl Default for Ppu {
             lines: 0,
             ppu_addr: 0,
             ppu_addr_tmp: None,
+            oam: ObjectAttributeMemory::default(),
             name_table0: NameTable::default(),
             attr_table0: AttrTable::default(),
+            name_table1: NameTable::default(),
+            attr_table1: AttrTable::default(),
+            name_table2: NameTable::default(),
+            attr_table2: AttrTable::default(),
+            name_table3: NameTable::default(),
+            attr_table3: AttrTable::default(),
             pallete: Pallete::default(),
         }
     }
@@ -49,26 +65,43 @@ impl Default for Ppu {
 impl Ppu {
     pub fn run(&mut self, rom: &Rom, cycle: u8) -> Option<Display> {
         PpuBus::new(self, rom).sync_registers();
+        self.oam.sync_registers(&mut self.registers);
         let line = match self.add_cycle(cycle) {
             Some(line) => line,
             None => return None,
         };
 
-        for x in 0..32 {
-            let index = self.name_table0.get_byte(x, line);
-            let sprite = Sprite::new(&rom.chr_rom, index);
-            let pallete_id = self.attr_table0.get_pallete_id(x, line);
-            let pallete = self.pallete.get_bg_pallete(pallete_id);
-            let colored_sprite = ColoredSprite::new(&sprite, &pallete);
-            renderer::render(&mut self.display, &colored_sprite, x, line);
-        }
+        self.render_line(line, rom);
 
         if line == 14 {
-            let tmp = self.display.clone();
-            self.display = Display::new(256, 240);
-            Some(tmp)
+            self.render_sprite(rom);
+            Some(self.display.clone())
         } else {
             None
+        }
+    }
+
+    pub fn render_line(&mut self, line: u8, rom: &Rom) {
+        for x in 0..32 {
+            let index = self.name_table0.get_byte(x, line);
+            let tile = Tile::new(&rom.chr_rom, index as u16);
+            let pallete_id = self.attr_table0.get_pallete_id(x, line);
+            let pallete = self.pallete.get_bg_pallete(pallete_id);
+            let colored_tile = ColoredTile::new(&tile, &pallete);
+            renderer::render(&mut self.display, &colored_tile, x * 8, line * 8);
+        }
+    }
+
+    pub fn render_sprite(&mut self, rom: &Rom) {
+        for id in 0..64 {
+            let sprite = self.oam.get(id);
+            if sprite.attr.hide || sprite.y >= 239 {
+                continue;
+            }
+            let tile = Tile::new(&rom.chr_rom, 0x100 + sprite.tile as u16);
+            let pallete = self.pallete.get_sprite_pallete(sprite.attr.pallete);
+            let colored_tile = ColoredTile::new(&tile, &pallete);
+            renderer::render(&mut self.display, &colored_tile, sprite.x, sprite.y + 1);
         }
     }
 

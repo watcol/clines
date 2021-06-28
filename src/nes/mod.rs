@@ -12,8 +12,10 @@ use pad::Pad;
 use ppu::Ppu;
 use rom::Rom;
 use std::path::Path;
+use std::sync::mpsc::{channel, TryRecvError};
+use std::thread;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct Nes<U> {
     rom: Rom,
     pad: Pad,
@@ -47,11 +49,25 @@ impl<U: Ui> Nes<U> {
     }
 
     pub fn run_loop_inner(&mut self) -> anyhow::Result<()> {
+        let (tx_time, rx_time) = channel();
+        let (tx_stop, rx_stop) = channel();
+        thread::spawn(move || {
+            let time = std::time::Duration::from_micros(1_000_000 / 60);
+            loop {
+                spin_sleep::sleep(time);
+                let _ = tx_time.send(());
+                if matches!(rx_stop.try_recv(), Ok(()) | Err(TryRecvError::Disconnected)) {
+                    break;
+                }
+            }
+        });
+
         loop {
             let cycle = self
                 .cpu
                 .run(&self.rom, &mut self.ppu, &mut self.pad, &self.ui)?;
             if let Some(display) = self.ppu.run(&self.rom, cycle * 3) {
+                rx_time.recv()?;
                 self.ui.flush(&display)?;
             }
 
@@ -61,6 +77,7 @@ impl<U: Ui> Nes<U> {
                 break;
             }
         }
+        tx_stop.send(())?;
         Ok(())
     }
 }

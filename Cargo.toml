@@ -20,8 +20,10 @@ include = [
 anyhow = "1.0"
 fmtlog = "0.1"
 log = "0.4"
+spin_sleep = "1.0"
 image = "0.23"
 crossterm = "0.19"
+itoa = "0.4"
 device_query = "0.2"
 minifb = "0.19"
 

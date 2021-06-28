@@ -1,9 +1,13 @@
 use super::Registers;
-use crate::nes::{ppu::Registers as PpuRegisters, Cpu, Pad, Ppu, Rom, Ui};
+use crate::nes::{
+    ppu::{ObjectAttributeMemory, Registers as PpuRegisters},
+    Cpu, Pad, Ppu, Rom, Ui,
+};
 
 pub struct CpuBus<'a, U: Ui> {
     pub registers: &'a mut Registers,
     ppu_registers: &'a mut PpuRegisters,
+    oam: &'a mut ObjectAttributeMemory,
     pad: &'a mut Pad,
     ui: &'a U,
     wram: &'a mut [u8; 0x800],
@@ -21,6 +25,7 @@ impl<'a, U: Ui> CpuBus<'a, U> {
         Self {
             registers: &mut cpu.registers,
             ppu_registers: &mut ppu.registers,
+            oam: &mut ppu.oam,
             pad,
             ui,
             wram: &mut cpu.wram,
@@ -32,6 +37,10 @@ impl<'a, U: Ui> CpuBus<'a, U> {
         let res = match addr {
             0x0000..=0x1FFF => self.wram[(addr % 0x800) as usize],
             0x2000..=0x3FFF => self.ppu_registers.read(addr),
+            0x4014 => {
+                warn!("Reading to {:#06x} is not allowed.", addr);
+                0
+            }
             0x4016 => self.pad.read(self.ui),
             0x4000..=0x7FFF => {
                 warn!("Address {:#06x} is unimplemented", addr);
@@ -63,6 +72,13 @@ impl<'a, U: Ui> CpuBus<'a, U> {
         match addr {
             0x0000..=0x1FFF => self.wram[(addr % 0x800) as usize] = value,
             0x2000..=0x3FFF => self.ppu_registers.write(addr, value),
+            0x4014 => {
+                let page = value as u16;
+                for i in 0..=0xff {
+                    let byte = self.get_byte(page * 0x100 + i as u16);
+                    self.oam.write(i, byte);
+                }
+            }
             0x4016 => self.pad.write(value),
             0x4000..=0x7FFF => warn!("Address {:#06x} is unimplemented", addr),
             _ => warn!("Writing to {:#06x} is not allowed.", addr),

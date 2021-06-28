@@ -10,7 +10,8 @@ use std::env::args;
 fn main() {
     fmtlog::new(
         fmtlog::Config::new()
-            .level(fmtlog::LevelFilter::Debug)
+            .format("[%T(%+)] %L: %M\n")
+            .level(fmtlog::LevelFilter::Info)
             .output("log.txt"),
     )
     .set()

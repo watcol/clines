@@ -10,17 +10,10 @@ pub struct Opecode {
 
 impl Opecode {
     pub fn exec<U: Ui>(&self, bus: &mut CpuBus<U>) -> anyhow::Result<u8> {
-        let pc = bus.registers.PC - 1;
-        let a = bus.registers.A;
-        let x = bus.registers.X;
-        let y = bus.registers.Y;
-        let p = bus.registers.P.as_u8();
+        let pc = bus.registers.PC;
         let (operand, page_corssed, asm) = self.addr.operand(bus);
+        // debug!("{:#06X} {:?} {}", pc, self.inst, asm);
         let branched = self.inst.exec(bus, operand)?;
-        debug!(
-            "{:04X} {:?} {:<10} A:{:02X} X:{:02X} Y:{:02X} P:{:02X}",
-            pc, self.inst, asm, a, x, y, p,
-        );
         let cycle = self.cycle
             + ((page_corssed && self.add_cycle) as u8)
             + ((branched && self.add_cycle) as u8);
