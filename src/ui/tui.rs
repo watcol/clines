@@ -98,8 +98,8 @@ impl Ui for Tui {
         self.buf.push(b'H');
         for y in 0..(height / 2) {
             for x in 0..width {
-                let px1 = *display.get_pixel(x, y * 2);
-                let px2 = *display.get_pixel(x, y * 2 + 1);
+                let px1 = display.get(x, y * 2);
+                let px2 = display.get(x, y * 2 + 1);
                 if bg_color != Some(px1) {
                     bg_color = Some(px1);
                     // execute!(
@@ -111,11 +111,11 @@ impl Ui for Tui {
                     //     })
                     // )?;
                     self.buf.extend(b"\x1b[48;2;");
-                    self.buf.push_int(px1.0[0])?;
+                    self.buf.push_int((px1.red * 255.0) as u8)?;
                     self.buf.push(b';');
-                    self.buf.push_int(px1.0[1])?;
+                    self.buf.push_int((px1.green * 255.0) as u8)?;
                     self.buf.push(b';');
-                    self.buf.push_int(px1.0[2])?;
+                    self.buf.push_int((px1.blue * 255.0) as u8)?;
                     self.buf.push(b'm');
                 }
 
@@ -130,11 +130,11 @@ impl Ui for Tui {
                     //     })
                     // )?;
                     self.buf.extend(b"\x1b[38;2;");
-                    self.buf.push_int(px2.0[0])?;
+                    self.buf.push_int((px2.red * 255.0) as u8)?;
                     self.buf.push(b';');
-                    self.buf.push_int(px2.0[1])?;
+                    self.buf.push_int((px2.green * 255.0) as u8)?;
                     self.buf.push(b';');
-                    self.buf.push_int(px2.0[2])?;
+                    self.buf.push_int((px2.blue * 255.0) as u8)?;
                     self.buf.push(b'm');
                 }
                 if bg_color == fg_color {

@@ -19,7 +19,7 @@ use name_table::NameTable;
 use pallete::Pallete;
 use tile::{ColoredTile, Tile};
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct Ppu {
     pub registers: Registers,
     pub oam: ObjectAttributeMemory,

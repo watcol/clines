@@ -1,20 +1,21 @@
 use super::Ui;
 use crate::nes::{Button, Display};
 use minifb::{Key, Scale, ScaleMode, Window, WindowOptions};
+use picto::color::Rgb;
 
 pub struct Gui {
     win: Window,
 }
 
-fn rgb2u32(rgb: image::Rgb<u8>) -> u32 {
-    let [r, g, b] = rgb.0;
-    (r as u32) << 16 | (g as u32) << 8 | (b as u32)
+fn rgb2u32(rgb: Rgb) -> u32 {
+    let Rgb { red, green, blue } = rgb;
+    ((red * 255.0) as u32) << 16 | ((green * 255.0) as u32) << 8 | ((blue * 255.0) as u32)
 }
 
 impl Gui {
     pub fn new() -> anyhow::Result<Self> {
         let win = Window::new(
-            "CliNES",
+            "NES",
             256,
             240,
             WindowOptions {
@@ -31,8 +32,8 @@ impl Gui {
 impl Ui for Gui {
     fn flush(&mut self, display: &Display) -> anyhow::Result<()> {
         let buffer = display
-            .enumerate_pixels()
-            .map(|(_, _, rgb)| rgb2u32(*rgb))
+            .pixels()
+            .map(|(_, _, rgb)| rgb2u32(rgb.get()))
             .collect::<Vec<_>>();
         self.win.update_with_buffer(
             &buffer,
