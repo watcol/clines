@@ -23,6 +23,7 @@ use tile::{ColoredTile, Tile};
 pub struct Ppu {
     pub registers: Registers,
     pub oam: ObjectAttributeMemory,
+    pub nmi: bool,
     display: Display,
     cycle: u16,
     lines: u16,
@@ -43,12 +44,13 @@ impl Default for Ppu {
     fn default() -> Self {
         Self {
             registers: Registers::default(),
+            oam: ObjectAttributeMemory::default(),
+            nmi: false,
             display: Display::new(256, 240),
             cycle: 0,
             lines: 0,
             ppu_addr: 0,
             ppu_addr_tmp: None,
-            oam: ObjectAttributeMemory::default(),
             name_table0: NameTable::default(),
             attr_table0: AttrTable::default(),
             name_table1: NameTable::default(),
@@ -83,8 +85,20 @@ impl Ppu {
 
     pub fn render_line(&mut self, line: u8, rom: &Rom) {
         for x in 0..32 {
-            let index = self.name_table0.get_byte(x, line);
-            let tile = Tile::new(&rom.chr_rom, index as u16);
+            let name_table = match self.registers.ppu_ctrl.name_table {
+                0x00 => &self.name_table0,
+                0x01 => &self.name_table1,
+                0x02 => &self.name_table2,
+                0x03 => &self.name_table3,
+                _ => unreachable!(),
+            };
+            let index = name_table.get_byte(x, line);
+            let offset = if self.registers.ppu_ctrl.bg_1000 {
+                0x100
+            } else {
+                0x0
+            };
+            let tile = Tile::new(&rom.chr_rom, index as u16 + offset);
             let pallete_id = self.attr_table0.get_pallete_id(x, line);
             let pallete = self.pallete.get_bg_pallete(pallete_id);
             let colored_tile = ColoredTile::new(&tile, &pallete);
@@ -95,10 +109,15 @@ impl Ppu {
     pub fn render_sprite(&mut self, rom: &Rom) {
         for id in 0..64 {
             let sprite = self.oam.get(id);
-            if sprite.attr.hide || sprite.y >= 239 {
+            if sprite.attr.hide || sprite.y >= 231 {
                 continue;
             }
-            let tile = Tile::new(&rom.chr_rom, 0x100 + sprite.tile as u16);
+            let offset = if self.registers.ppu_ctrl.sprite_1000 {
+                0x100
+            } else {
+                0x0
+            };
+            let tile = Tile::new(&rom.chr_rom, sprite.tile as u16 + offset);
             let pallete = self.pallete.get_sprite_pallete(sprite.attr.pallete);
             let colored_tile = ColoredTile::new(&tile, &pallete);
             renderer::render(&mut self.display, &colored_tile, sprite.x, sprite.y + 1);
@@ -122,6 +141,9 @@ impl Ppu {
             None
         } else if self.lines == 243 {
             self.registers.ppu_status.vblank = true;
+            if self.registers.ppu_ctrl.enable_nmi {
+                self.nmi = true;
+            }
             None
         } else {
             None

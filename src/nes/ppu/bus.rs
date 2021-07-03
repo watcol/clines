@@ -102,16 +102,22 @@ impl<'a> PpuBus<'a> {
             }
         }
 
+        let offset = if self.registers.ppu_ctrl.ppu_mem_32 {
+            0x20
+        } else {
+            0x01
+        };
+
         if self.registers.ppu_data_writed {
             self.registers.ppu_data_writed = false;
             self.set_byte(*self.ppu_addr, self.registers.ppu_data);
-            *self.ppu_addr += 1;
+            *self.ppu_addr += offset;
             self.registers.ppu_data = self.get_byte(*self.ppu_addr);
         }
 
         if self.registers.ppu_data_readed {
             self.registers.ppu_data_readed = false;
-            *self.ppu_addr += 1;
+            *self.ppu_addr += offset;
             self.registers.ppu_data = self.get_byte(*self.ppu_addr);
         }
     }

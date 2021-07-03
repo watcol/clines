@@ -24,6 +24,7 @@ impl Default for Cpu {
         }
     }
 }
+
 impl Cpu {
     pub fn run<U: Ui>(
         &mut self,
@@ -32,7 +33,21 @@ impl Cpu {
         pad: &mut Pad,
         ui: &U,
     ) -> anyhow::Result<u8> {
+        let nmi_flag = if ppu.nmi {
+            ppu.nmi = false;
+            true
+        } else {
+            false
+        };
+
         let mut bus = CpuBus::new(self, rom, ppu, pad, ui);
+        if nmi_flag {
+            bus.registers.P.break_mode = false;
+            bus.push_word(bus.registers.PC)?;
+            bus.push_byte(bus.registers.P.as_u8())?;
+            bus.registers.P.interrupt = true;
+            bus.registers.PC = bus.get_word(0xfffa);
+        }
         let opecode = OPECODES[bus.increment_byte() as usize];
         opecode.exec(&mut bus)
     }

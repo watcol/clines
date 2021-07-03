@@ -1,6 +1,6 @@
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub struct Registers {
-    pub(super) ppu_ctrl: u8,
+    pub(super) ppu_ctrl: PpuCtrl,
     pub(super) ppu_mask: u8,
     pub(super) ppu_status: PpuStatus,
     pub(super) oam_addr: u8,
@@ -54,7 +54,7 @@ impl Registers {
 
     pub fn write(&mut self, addr: u16, value: u8) {
         match addr % 0x8 {
-            0x0 => self.ppu_ctrl = value,
+            0x0 => self.ppu_ctrl = PpuCtrl::from_u8(value),
             0x1 => self.ppu_mask = value,
             0x2 => warn!("Writing to PPUSTATUS is not allowed."),
             0x3 => {
@@ -75,6 +75,45 @@ impl Registers {
                 self.ppu_data = value;
             }
             _ => unreachable!(),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct PpuCtrl {
+    pub enable_nmi: bool,
+    pub ppu_master_slave: bool,
+    pub sprite_16: bool,
+    pub bg_1000: bool,
+    pub sprite_1000: bool,
+    pub ppu_mem_32: bool,
+    pub name_table: u8,
+}
+
+impl Default for PpuCtrl {
+    fn default() -> Self {
+        Self {
+            enable_nmi: false,
+            ppu_master_slave: true,
+            sprite_16: false,
+            bg_1000: false,
+            sprite_1000: true,
+            ppu_mem_32: false,
+            name_table: 0,
+        }
+    }
+}
+
+impl PpuCtrl {
+    pub fn from_u8(byte: u8) -> Self {
+        Self {
+            enable_nmi: byte & 0x80 == 0x80,
+            ppu_master_slave: byte & 0x40 == 0x40,
+            sprite_16: byte & 0x20 == 0x20,
+            bg_1000: byte & 0x10 == 0x10,
+            sprite_1000: byte & 0x08 == 0x08,
+            ppu_mem_32: byte & 0x04 == 0x04,
+            name_table: byte & 0x03,
         }
     }
 }

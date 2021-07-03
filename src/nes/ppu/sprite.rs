@@ -67,12 +67,23 @@ impl Sprite {
     }
 }
 
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct SpriteAttribute {
     pub vertical_flip: bool,
     pub horizontal_flip: bool,
     pub hide: bool,
     pub pallete: u8,
+}
+
+impl Default for SpriteAttribute {
+    fn default() -> Self {
+        Self {
+            vertical_flip: false,
+            horizontal_flip: false,
+            hide: true,
+            pallete: 0,
+        }
+    }
 }
 
 impl SpriteAttribute {
