@@ -10,9 +10,7 @@ pub struct Opecode {
 
 impl Opecode {
     pub fn exec<U: Ui>(&self, bus: &mut CpuBus<U>) -> anyhow::Result<u8> {
-        let pc = bus.registers.PC;
-        let (operand, page_corssed, asm) = self.addr.operand(bus);
-        debug!("{:#06X} {:?} {}", pc, self.inst, asm);
+        let (operand, page_corssed) = self.addr.operand(bus);
         let branched = self.inst.exec(bus, operand)?;
         let cycle = self.cycle
             + ((page_corssed && self.add_cycle) as u8)
@@ -593,90 +591,52 @@ pub enum Addressing {
 }
 
 impl Addressing {
-    fn operand<U: Ui>(&self, bus: &mut CpuBus<U>) -> (Operand, bool, String) {
+    fn operand<U: Ui>(&self, bus: &mut CpuBus<U>) -> (Operand, bool) {
         match self {
-            Self::Implied => (Operand::None, false, String::new()),
-            Self::Accumulator => (Operand::Accumulator, false, String::new()),
-            Self::Immediate => {
-                let val = bus.increment_byte();
-                (Operand::Value(val), false, format!("#{:02X}", val))
-            }
-            Self::ZeroPage => {
-                let addr = bus.increment_byte() as u16;
-                (Operand::Address(addr), false, format!("{:02X}", addr))
-            }
-            Self::ZeroPageX => {
-                let addr = bus.increment_byte();
-                (
-                    Operand::Address(addr.overflowing_add(bus.registers.X).0 as u16),
-                    false,
-                    format!("{:02X}, X", addr),
-                )
-            }
-            Self::ZeroPageY => {
-                let addr = bus.increment_byte();
-                (
-                    Operand::Address(addr.overflowing_add(bus.registers.Y).0 as u16),
-                    false,
-                    format!("{:02X}, Y", addr),
-                )
-            }
-            Self::Absolute => {
-                let addr = bus.increment_word();
-                (Operand::Address(addr), false, format!("{:04X}", addr))
-            }
+            Self::Implied => (Operand::None, false),
+            Self::Accumulator => (Operand::Accumulator, false),
+            Self::Immediate => (Operand::Value(bus.increment_byte()), false),
+            Self::ZeroPage => (Operand::Address(bus.increment_byte() as u16), false),
+            Self::ZeroPageX => (
+                Operand::Address(bus.increment_byte().overflowing_add(bus.registers.X).0 as u16),
+                false,
+            ),
+            Self::ZeroPageY => (
+                Operand::Address(bus.increment_byte().overflowing_add(bus.registers.Y).0 as u16),
+                false,
+            ),
+            Self::Absolute => (Operand::Address(bus.increment_word()), false),
             Self::AbsoluteX => {
                 let base = bus.increment_word();
                 let addr = base + bus.registers.X as u16;
-                (
-                    Operand::Address(addr),
-                    base / 0x100 != addr / 0x100,
-                    format!("{:04X}, X", base),
-                )
+                (Operand::Address(addr), base / 0x100 != addr / 0x100)
             }
             Self::AbsoluteY => {
                 let base = bus.increment_word();
                 let (addr, _) = base.overflowing_add(bus.registers.Y as u16);
-                (
-                    Operand::Address(addr),
-                    base / 0x100 != addr / 0x100,
-                    format!("{:04X}, X", base),
-                )
+                (Operand::Address(addr), base / 0x100 != addr / 0x100)
             }
             Self::Relative => {
                 let offset = bus.increment_byte() as i8;
                 (
                     Operand::Address((bus.registers.PC as i16 + offset as i16) as u16),
                     false,
-                    format!("{:02X}", offset),
                 )
             }
             Self::Indirect => {
                 let addr = bus.increment_word();
-                (
-                    Operand::Address(bus.get_word_page(addr)),
-                    false,
-                    format!("({:04X})", addr),
-                )
+                (Operand::Address(bus.get_word_page(addr)), false)
             }
             Self::IndirectX => {
                 let base = bus.increment_byte();
                 let (addr, _) = base.overflowing_add(bus.registers.X);
-                (
-                    Operand::Address(bus.get_word_page(addr as u16)),
-                    false,
-                    format!("({:02X}, X)", base),
-                )
+                (Operand::Address(bus.get_word_page(addr as u16)), false)
             }
             Self::IndirectY => {
                 let base_addr = bus.increment_byte();
                 let base = bus.get_word_page(base_addr as u16);
                 let (addr, _) = base.overflowing_add(bus.registers.Y as u16);
-                (
-                    Operand::Address(addr),
-                    base / 0x100 != addr / 0x100,
-                    format!("({:02X}), Y", base_addr),
-                )
+                (Operand::Address(addr), base / 0x100 != addr / 0x100)
             }
         }
     }

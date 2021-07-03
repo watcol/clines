@@ -22,7 +22,6 @@ pub struct Pad {
 
 impl Pad {
     pub fn write(&mut self, value: u8) {
-        debug!("Pad Wrote");
         if value & 0x01 == 0x01 {
             self.reset = true;
         } else if self.reset && value & 0x01 == 0x00 {

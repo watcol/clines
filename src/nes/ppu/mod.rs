@@ -73,10 +73,14 @@ impl Ppu {
             None => return None,
         };
 
-        self.render_line(line, rom);
+        if self.registers.ppu_mask.show_bg {
+            self.render_line(line, rom);
+        }
 
         if line == 14 {
-            self.render_sprite(rom);
+            if self.registers.ppu_mask.show_sprites {
+                self.render_sprite(rom);
+            }
             Some(self.display.clone())
         } else {
             None
@@ -85,11 +89,14 @@ impl Ppu {
 
     pub fn render_line(&mut self, line: u8, rom: &Rom) {
         for x in 0..32 {
-            let name_table = match self.registers.ppu_ctrl.name_table {
-                0x00 => &self.name_table0,
-                0x01 => &self.name_table1,
-                0x02 => &self.name_table2,
-                0x03 => &self.name_table3,
+            if x == 0 && !self.registers.ppu_mask.show_left_bg {
+                continue;
+            }
+            let (name_table, attr_table) = match self.registers.ppu_ctrl.name_table {
+                0x00 => (&self.name_table0, &self.attr_table0),
+                0x01 => (&self.name_table1, &self.attr_table1),
+                0x02 => (&self.name_table2, &self.attr_table2),
+                0x03 => (&self.name_table3, &self.attr_table3),
                 _ => unreachable!(),
             };
             let index = name_table.get_byte(x, line);
@@ -99,7 +106,7 @@ impl Ppu {
                 0x0
             };
             let tile = Tile::new(&rom.chr_rom, index as u16 + offset);
-            let pallete_id = self.attr_table0.get_pallete_id(x, line);
+            let pallete_id = attr_table.get_pallete_id(x, line);
             let pallete = self.pallete.get_bg_pallete(pallete_id);
             let colored_tile = ColoredTile::new(&tile, &pallete);
             renderer::render(&mut self.display, &colored_tile, x * 8, line * 8);
@@ -109,7 +116,9 @@ impl Ppu {
     pub fn render_sprite(&mut self, rom: &Rom) {
         for id in 0..64 {
             let sprite = self.oam.get(id);
-            if sprite.attr.hide || sprite.y >= 231 {
+            if (sprite.attr.hide || sprite.y >= 231)
+                || (!self.registers.ppu_mask.show_left_sprite && sprite.x < 8)
+            {
                 continue;
             }
             let offset = if self.registers.ppu_ctrl.sprite_1000 {

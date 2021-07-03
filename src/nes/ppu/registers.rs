@@ -1,7 +1,7 @@
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub struct Registers {
     pub(super) ppu_ctrl: PpuCtrl,
-    pub(super) ppu_mask: u8,
+    pub(super) ppu_mask: PpuMask,
     pub(super) ppu_status: PpuStatus,
     pub(super) oam_addr: u8,
     pub(super) oam_addr_writed: bool,
@@ -55,7 +55,7 @@ impl Registers {
     pub fn write(&mut self, addr: u16, value: u8) {
         match addr % 0x8 {
             0x0 => self.ppu_ctrl = PpuCtrl::from_u8(value),
-            0x1 => self.ppu_mask = value,
+            0x1 => self.ppu_mask = PpuMask::from_u8(value),
             0x2 => warn!("Writing to PPUSTATUS is not allowed."),
             0x3 => {
                 self.oam_addr_writed = true;
@@ -114,6 +114,33 @@ impl PpuCtrl {
             sprite_1000: byte & 0x08 == 0x08,
             ppu_mem_32: byte & 0x04 == 0x04,
             name_table: byte & 0x03,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub struct PpuMask {
+    pub emphasize_blue: bool,
+    pub emphasize_green: bool,
+    pub emphasize_red: bool,
+    pub show_sprites: bool,
+    pub show_bg: bool,
+    pub show_left_sprite: bool,
+    pub show_left_bg: bool,
+    pub greyscale: bool,
+}
+
+impl PpuMask {
+    pub fn from_u8(byte: u8) -> Self {
+        Self {
+            emphasize_blue: byte & 0x80 == 0x80,
+            emphasize_green: byte & 0x40 == 0x40,
+            emphasize_red: byte & 0x20 == 0x20,
+            show_sprites: byte & 0x10 == 0x10,
+            show_bg: byte & 0x08 == 0x08,
+            show_left_sprite: byte & 0x04 == 0x04,
+            show_left_bg: byte & 0x02 == 0x02,
+            greyscale: byte & 0x01 == 0x01,
         }
     }
 }

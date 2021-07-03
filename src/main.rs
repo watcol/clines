@@ -11,7 +11,7 @@ fn main() {
     fmtlog::new(
         fmtlog::Config::new()
             .format(fmtlog::formats::SIMPLE1)
-            .level(fmtlog::LevelFilter::Info)
+            .level(fmtlog::LevelFilter::Debug)
             .output("log.txt"),
     )
     .set()
