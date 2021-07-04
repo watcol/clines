@@ -55,4 +55,8 @@ impl Pallete {
         let sprites = self.sprite[id as usize];
         [self.universal_bg, sprites[0], sprites[1], sprites[2]]
     }
+
+    pub fn get_universal_bg(&self) -> u8 {
+        self.universal_bg
+    }
 }

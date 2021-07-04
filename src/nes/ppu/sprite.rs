@@ -1,7 +1,7 @@
 use super::Registers;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ObjectAttributeMemory([Sprite; 64]);
+pub struct ObjectAttributeMemory(pub [Sprite; 64]);
 
 impl Default for ObjectAttributeMemory {
     fn default() -> Self {
@@ -10,10 +10,6 @@ impl Default for ObjectAttributeMemory {
 }
 
 impl ObjectAttributeMemory {
-    pub fn get(&self, id: u8) -> Sprite {
-        self.0[id as usize]
-    }
-
     pub fn read(&self, addr: u8) -> u8 {
         self.0[(addr / 4) as usize].read(addr % 4)
     }

@@ -14,6 +14,7 @@ use attr_table::AttrTable;
 use bus::PpuBus;
 use name_table::NameTable;
 use pallete::Pallete;
+use sprite::Sprite;
 
 use once_cell::sync::Lazy;
 use picto::color::Rgb;
@@ -143,12 +144,7 @@ impl Ppu {
         }
 
         if 2 <= self.lines && self.lines < 242 {
-            if self.registers.ppu_mask.show_bg {
-                self.render_bg((self.lines - 2) as u8, rom);
-            }
-            if self.registers.ppu_mask.show_sprites {
-                self.render_sprite((self.lines - 2) as u8, rom);
-            }
+            self.render_line((self.lines - 2) as u8, rom);
             None
         } else if self.lines == 242 {
             self.registers.ppu_status.vblank = true;
@@ -164,7 +160,31 @@ impl Ppu {
         }
     }
 
-    pub fn render_bg(&mut self, line: u8, rom: &Rom) {
+    pub fn render_line(&mut self, line: u8, rom: &Rom) {
+        let universal_bg = self.pallete.get_universal_bg();
+        let mut buf = [universal_bg; 256];
+        if self.registers.ppu_mask.show_sprites {
+            let (hide, show): (Vec<&Sprite>, Vec<&Sprite>) =
+                self.oam.0.iter().partition(|&sprite| sprite.attr.hide);
+            for sprite in hide {
+                self.render_sprite(&mut buf, sprite, line, rom);
+            }
+            if self.registers.ppu_mask.show_bg {
+                self.render_bg(&mut buf, line, rom);
+            }
+            for sprite in show {
+                self.render_sprite(&mut buf, sprite, line, rom);
+            }
+        } else if self.registers.ppu_mask.show_bg {
+            self.render_bg(&mut buf, line, rom);
+        }
+        for (i, color) in buf.iter().enumerate() {
+            self.display
+                .set(i as u32, line as u32, &COLORS[*color as usize]);
+        }
+    }
+
+    pub fn render_bg(&self, buf: &mut [u8; 256], line: u8, rom: &Rom) {
         for x in 0..32 {
             if x == 0 && !self.registers.ppu_mask.show_left_bg {
                 continue;
@@ -192,40 +212,41 @@ impl Ppu {
             for i in (0..8).rev() {
                 let bit1 = byte1 % 2;
                 let bit2 = byte2 % 2;
-                let color = COLORS[pallete[(bit2 * 2 + bit1) as usize] as usize];
                 byte1 /= 2;
                 byte2 /= 2;
-                self.display.set((x * 8 + i) as u32, line as u32, &color);
+                let color = (bit2 * 2 + bit1) as usize;
+                if color != 0 {
+                    buf[(x * 8 + i) as usize] = pallete[color];
+                }
             }
         }
     }
 
-    pub fn render_sprite(&mut self, line: u8, rom: &Rom) {
-        for id in 0..64 {
-            let sprite = self.oam.get(id);
-            if (sprite.attr.hide || sprite.y >= 231)
-                || (!self.registers.ppu_mask.show_left_sprite && sprite.x < 8)
-                || (line < sprite.y || sprite.y + 8 <= line)
-            {
-                continue;
-            }
-            let pos = line - sprite.y;
-            let offset = if self.registers.ppu_ctrl.sprite_1000 {
-                0x100
-            } else {
-                0x0
-            };
-            let index = sprite.tile as usize + offset;
-            let mut byte1 = rom.chr_rom[index * 0x10 + pos as usize];
-            let mut byte2 = rom.chr_rom[index * 0x10 + pos as usize + 8];
-            let pallete = self.pallete.get_sprite_pallete(sprite.attr.pallete);
-            for i in (0..8).rev() {
-                let bit1 = byte1 % 2;
-                let bit2 = byte2 % 2;
-                let color = COLORS[pallete[(bit2 * 2 + bit1) as usize] as usize];
-                byte1 /= 2;
-                byte2 /= 2;
-                self.display.set((sprite.x + i) as u32, line as u32, &color);
+    pub fn render_sprite(&self, buf: &mut [u8; 256], sprite: &Sprite, line: u8, rom: &Rom) {
+        if sprite.y >= 231
+            || (!self.registers.ppu_mask.show_left_sprite && sprite.x < 8)
+            || (line < sprite.y || sprite.y + 8 <= line)
+        {
+            return;
+        }
+        let pos = line - sprite.y;
+        let offset = if self.registers.ppu_ctrl.sprite_1000 {
+            0x100
+        } else {
+            0x0
+        };
+        let index = sprite.tile as usize + offset;
+        let mut byte1 = rom.chr_rom[index * 0x10 + pos as usize];
+        let mut byte2 = rom.chr_rom[index * 0x10 + pos as usize + 8];
+        let pallete = self.pallete.get_sprite_pallete(sprite.attr.pallete);
+        for i in (0..8).rev() {
+            let bit1 = byte1 % 2;
+            let bit2 = byte2 % 2;
+            byte1 /= 2;
+            byte2 /= 2;
+            let color = (bit2 * 2 + bit1) as usize;
+            if color != 0 {
+                buf[(sprite.x + i) as usize] = pallete[color];
             }
         }
     }
