@@ -4,6 +4,14 @@ use std::{error::Error, fmt, fs::File, io::Read, path::Path};
 pub struct Rom {
     pub prg_rom: Vec<u8>,
     pub chr_rom: Vec<u8>,
+    pub mirroring: Mirroring,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Mirroring {
+    None,
+    Horizontal,
+    Vertical,
 }
 
 impl Rom {
@@ -15,7 +23,9 @@ impl Rom {
         validate_byte(&mut bytes, 0x1a)?;
         let prg_len = get_byte(&mut bytes, String::from("PRG ROM length"))?;
         let chr_len = get_byte(&mut bytes, String::from("CHR ROM length"))?;
-        let _flag_6 = get_byte(&mut bytes, String::from("Flag byte"))?;
+        let flag_6 = get_byte(&mut bytes, String::from("Flag byte"))?;
+        let vertical_mirror = flag_6 & 0x01 == 0x01;
+        let no_mirror = flag_6 & 0x08 == 0x08;
         let _flag_7 = get_byte(&mut bytes, String::from("Flag byte"))?;
         let _flag_8 = get_byte(&mut bytes, String::from("Flag byte"))?;
         let _flag_9 = get_byte(&mut bytes, String::from("Flag byte"))?;
@@ -35,7 +45,18 @@ impl Rom {
             0x2000 * (chr_len as usize),
             String::from("CHR ROM"),
         )?;
-        Ok(Rom { prg_rom, chr_rom })
+        let mirroring = if no_mirror {
+            Mirroring::None
+        } else if vertical_mirror {
+            Mirroring::Vertical
+        } else {
+            Mirroring::Horizontal
+        };
+        Ok(Rom {
+            prg_rom,
+            chr_rom,
+            mirroring,
+        })
     }
 
     pub fn from_path<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
