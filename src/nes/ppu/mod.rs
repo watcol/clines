@@ -229,7 +229,11 @@ impl Ppu {
         {
             return;
         }
-        let pos = line - sprite.y;
+        let pos = if sprite.attr.vertical_flip {
+            8 - (line - sprite.y)
+        } else {
+            line - sprite.y
+        };
         let offset = if self.registers.ppu_ctrl.sprite_1000 {
             0x100
         } else {
@@ -246,7 +250,11 @@ impl Ppu {
             byte2 /= 2;
             let color = (bit2 * 2 + bit1) as usize;
             if color != 0 {
-                buf[(sprite.x + i) as usize] = pallete[color];
+                if sprite.attr.horizontal_flip {
+                    buf[(sprite.x + (8 - i)) as usize] = pallete[color];
+                } else {
+                    buf[(sprite.x + i) as usize] = pallete[color];
+                }
             }
         }
     }
