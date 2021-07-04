@@ -139,11 +139,26 @@ impl Ppu {
     pub fn run(&mut self, rom: &Rom, cycle: u8) -> Option<Display> {
         PpuBus::new(self, rom).sync_registers();
         self.oam.sync_registers(&mut self.registers);
-        if !self.add_cycle(cycle) {
+        let updated = self.add_cycle(cycle);
+        let sprite0 = self.oam.0[0];
+        if sprite0.y as u16 == self.lines
+            && self.registers.ppu_mask.show_bg
+            && self.registers.ppu_mask.show_sprites
+            && !(sprite0.x < 8
+                && (!self.registers.ppu_mask.show_left_bg
+                    || !self.registers.ppu_mask.show_left_sprite))
+        {
+            self.registers.ppu_status.sprite_hit = true;
+        }
+
+        if !updated {
             return None;
         }
 
-        if 2 <= self.lines && self.lines < 242 {
+        if self.lines == 0 {
+            self.registers.ppu_status.sprite_hit = false;
+            None
+        } else if 2 <= self.lines && self.lines < 242 {
             self.render_line((self.lines - 2) as u8, rom);
             None
         } else if self.lines == 242 {

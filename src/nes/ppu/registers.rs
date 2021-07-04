@@ -7,7 +7,7 @@ pub struct Registers {
     pub(super) oam_addr_writed: bool,
     pub(super) oam_data: u8,
     pub(super) oam_data_writed: bool,
-    pub(super) ppu_scroll: u8,
+    pub(super) ppu_scroll: PpuScroll,
     pub(super) ppu_addr: u8,
     pub(super) ppu_addr_writed: bool,
     pub(super) ppu_data: u8,
@@ -65,7 +65,7 @@ impl Registers {
                 self.oam_data_writed = true;
                 self.oam_data = value;
             }
-            0x5 => self.ppu_scroll = value,
+            0x5 => self.ppu_scroll.write(value),
             0x6 => {
                 self.ppu_addr_writed = true;
                 self.ppu_addr = value;
@@ -155,5 +155,24 @@ pub struct PpuStatus {
 impl PpuStatus {
     pub fn as_u8(&self) -> u8 {
         self.vblank as u8 * 0x80 + self.sprite_hit as u8 * 0x40 + self.sprite_overflow as u8 * 0x20
+    }
+}
+
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub struct PpuScroll {
+    pub is_y: bool,
+    pub x: u8,
+    pub y: u8,
+}
+
+impl PpuScroll {
+    pub fn write(&mut self, value: u8) {
+        if self.is_y {
+            self.y = value;
+            self.is_y = false;
+        } else {
+            self.x = value;
+            self.is_y = true;
+        }
     }
 }
