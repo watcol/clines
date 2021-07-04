@@ -5,7 +5,7 @@ pub struct PpuBus<'a> {
     pub registers: &'a mut Registers,
     ppu_addr: &'a mut u16,
     ppu_addr_tmp: &'a mut Option<u8>,
-    pattern_table: &'a [u8],
+    pattern_table: PatternTable<'a>,
     name_table0: &'a mut NameTable,
     attr_table0: &'a mut AttrTable,
     name_table1: &'a mut NameTable,
@@ -17,13 +17,38 @@ pub struct PpuBus<'a> {
     pallete: &'a mut Pallete,
 }
 
+enum PatternTable<'a> {
+    Rom(&'a [u8]),
+    Ram(&'a mut [u8]),
+}
+
+impl<'a> PatternTable<'a> {
+    fn read(&self, addr: u16) -> u8 {
+        match self {
+            PatternTable::Rom(rom) => rom[addr as usize],
+            PatternTable::Ram(ram) => ram[addr as usize],
+        }
+    }
+
+    fn write(&mut self, addr: u16, value: u8) {
+        match self {
+            PatternTable::Rom(_) => warn!("CHR ROM is readonly."),
+            PatternTable::Ram(ram) => ram[addr as usize] = value,
+        }
+    }
+}
+
 impl<'a> PpuBus<'a> {
     pub fn new(ppu: &'a mut Ppu, rom: &'a Rom) -> Self {
         Self {
             registers: &mut ppu.registers,
             ppu_addr: &mut ppu.ppu_addr,
             ppu_addr_tmp: &mut ppu.ppu_addr_tmp,
-            pattern_table: &rom.chr_rom,
+            pattern_table: if let Some(ref mut ram) = ppu.chr_ram {
+                PatternTable::Ram(ram)
+            } else {
+                PatternTable::Rom(&rom.chr_rom)
+            },
             name_table0: &mut ppu.name_table0,
             attr_table0: &mut ppu.attr_table0,
             name_table1: &mut ppu.name_table1,
@@ -38,7 +63,7 @@ impl<'a> PpuBus<'a> {
 
     pub fn get_byte(&self, addr: u16) -> u8 {
         match addr {
-            0x0000..=0x1FFF => self.pattern_table[addr as usize],
+            0x0000..=0x1FFF => self.pattern_table.read(addr),
             0x2000..=0x23BF => self.name_table0.read(addr - 0x2000),
             0x23C0..=0x23FF => self.attr_table0.read(addr - 0x23C0),
             0x2400..=0x27BF => self.name_table1.read(addr - 0x2400),
@@ -64,7 +89,7 @@ impl<'a> PpuBus<'a> {
 
     pub fn set_byte(&mut self, addr: u16, value: u8) {
         match addr {
-            0x0000..=0x1FFF => warn!("CHR ROM is readonly."),
+            0x0000..=0x1FFF => self.pattern_table.write(addr, value),
             0x2000..=0x23BF => self.name_table0.write(addr - 0x2000, value),
             0x23C0..=0x23FF => self.attr_table0.write(addr - 0x23C0, value),
             0x2400..=0x27BF => self.name_table1.write(addr - 0x2400, value),

@@ -6,7 +6,6 @@ mod registers;
 mod sprite;
 
 use crate::nes::Rom;
-
 pub use registers::Registers;
 pub use sprite::ObjectAttributeMemory;
 
@@ -95,6 +94,7 @@ pub struct Ppu {
     pub registers: Registers,
     pub oam: ObjectAttributeMemory,
     pub nmi: bool,
+    chr_ram: Option<[u8; 0x2000]>,
     display: Display,
     cycle: u16,
     lines: u16,
@@ -111,12 +111,17 @@ pub struct Ppu {
     pallete: Pallete,
 }
 
-impl Default for Ppu {
-    fn default() -> Self {
+impl Ppu {
+    pub fn new(rom: &Rom) -> Self {
         Self {
             registers: Registers::default(),
             oam: ObjectAttributeMemory::default(),
             nmi: false,
+            chr_ram: if rom.chr_rom.is_empty() {
+                Some([0; 0x2000])
+            } else {
+                None
+            },
             display: Display::new(256, 240),
             cycle: 0,
             lines: 0,
@@ -133,9 +138,7 @@ impl Default for Ppu {
             pallete: Pallete::default(),
         }
     }
-}
 
-impl Ppu {
     pub fn run(&mut self, rom: &Rom, cycle: u8) -> Option<Display> {
         PpuBus::new(self, rom).sync_registers();
         self.oam.sync_registers(&mut self.registers);
@@ -176,22 +179,27 @@ impl Ppu {
     }
 
     pub fn render_line(&mut self, line: u8, rom: &Rom) {
+        let pattern: &[u8] = if let Some(ref ram) = self.chr_ram {
+            ram
+        } else {
+            &rom.chr_rom
+        };
         let universal_bg = self.pallete.get_universal_bg();
         let mut buf = [universal_bg; 256];
         if self.registers.ppu_mask.show_sprites {
             let (hide, show): (Vec<&Sprite>, Vec<&Sprite>) =
                 self.oam.0.iter().partition(|&sprite| sprite.attr.hide);
             for sprite in hide {
-                self.render_sprite(&mut buf, sprite, line, rom);
+                self.render_sprite(&mut buf, sprite, line, pattern);
             }
             if self.registers.ppu_mask.show_bg {
-                self.render_bg(&mut buf, line, rom);
+                self.render_bg(&mut buf, line, pattern);
             }
             for sprite in show {
-                self.render_sprite(&mut buf, sprite, line, rom);
+                self.render_sprite(&mut buf, sprite, line, pattern);
             }
         } else if self.registers.ppu_mask.show_bg {
-            self.render_bg(&mut buf, line, rom);
+            self.render_bg(&mut buf, line, pattern);
         }
         for (i, color) in buf.iter().enumerate() {
             self.display
@@ -199,7 +207,7 @@ impl Ppu {
         }
     }
 
-    pub fn render_bg(&self, buf: &mut [u8; 256], line: u8, rom: &Rom) {
+    pub fn render_bg(&self, buf: &mut [u8; 256], line: u8, pattern: &[u8]) {
         for x in 0..32 {
             if x == 0 && !self.registers.ppu_mask.show_left_bg {
                 continue;
@@ -220,8 +228,8 @@ impl Ppu {
                 0x0
             };
             let index = index as usize + offset;
-            let mut byte1 = rom.chr_rom[index * 0x10 + line_mod as usize];
-            let mut byte2 = rom.chr_rom[index * 0x10 + line_mod as usize + 8];
+            let mut byte1 = pattern[index * 0x10 + line_mod as usize];
+            let mut byte2 = pattern[index * 0x10 + line_mod as usize + 8];
             let pallete_id = attr_table.get_pallete_id(x, line / 8);
             let pallete = self.pallete.get_bg_pallete(pallete_id);
             for i in (0..8).rev() {
@@ -237,7 +245,7 @@ impl Ppu {
         }
     }
 
-    pub fn render_sprite(&self, buf: &mut [u8; 256], sprite: &Sprite, line: u8, rom: &Rom) {
+    pub fn render_sprite(&self, buf: &mut [u8; 256], sprite: &Sprite, line: u8, pattern: &[u8]) {
         if sprite.y >= 231
             || (!self.registers.ppu_mask.show_left_sprite && sprite.x < 8)
             || (line < sprite.y || sprite.y + 8 <= line)
@@ -255,8 +263,8 @@ impl Ppu {
             0x0
         };
         let index = sprite.tile as usize + offset;
-        let mut byte1 = rom.chr_rom[index * 0x10 + pos as usize];
-        let mut byte2 = rom.chr_rom[index * 0x10 + pos as usize + 8];
+        let mut byte1 = pattern[index * 0x10 + pos as usize];
+        let mut byte2 = pattern[index * 0x10 + pos as usize + 8];
         let pallete = self.pallete.get_sprite_pallete(sprite.attr.pallete);
         for i in (0..8).rev() {
             let bit1 = byte1 % 2;

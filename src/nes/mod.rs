@@ -26,11 +26,13 @@ pub struct Nes<U> {
 
 impl<U: Ui> Nes<U> {
     pub fn from_path<P: AsRef<Path>>(path: P, ui: U) -> anyhow::Result<Self> {
+        let rom = Rom::from_path(path)?;
+        let ppu = Ppu::new(&rom);
         let mut res = Self {
-            rom: Rom::from_path(path)?,
+            rom,
             cpu: Cpu::default(),
             pad: Pad::default(),
-            ppu: Ppu::default(),
+            ppu,
             ui,
         };
         res.reset();
