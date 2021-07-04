@@ -142,18 +142,10 @@ impl Ppu {
     pub fn run(&mut self, rom: &Rom, cycle: u8) -> Option<Display> {
         PpuBus::new(self, rom).sync_registers();
         self.oam.sync_registers(&mut self.registers);
-        let updated = self.add_cycle(cycle);
-        let sprite0 = self.oam.0[0];
-        if sprite0.y as u16 == self.lines
-            && self.registers.ppu_mask.show_bg
-            && self.registers.ppu_mask.show_sprites
-            && !(sprite0.x < 8
-                && (!self.registers.ppu_mask.show_left_bg
-                    || !self.registers.ppu_mask.show_left_sprite))
-        {
+        if self.has_sprite_hit(rom) {
             self.registers.ppu_status.sprite_hit = true;
         }
-
+        let updated = self.add_cycle(cycle);
         if !updated {
             return None;
         }
@@ -176,6 +168,48 @@ impl Ppu {
         } else {
             None
         }
+    }
+
+    pub fn has_sprite_hit(&self, rom: &Rom) -> bool {
+        let pattern: &[u8] = if let Some(ref ram) = self.chr_ram {
+            ram
+        } else {
+            &rom.chr_rom
+        };
+        let sprite0 = self.oam.0[0];
+        sprite0.y as u16 == self.lines
+            && (self.registers.ppu_mask.show_bg && self.registers.ppu_mask.show_sprites)
+            && !(sprite0.x < 8
+                && (!self.registers.ppu_mask.show_left_bg
+                    || !self.registers.ppu_mask.show_left_sprite))
+            && !{
+                let index = sprite0.tile as usize;
+                let offset = if self.registers.ppu_ctrl.sprite_1000 {
+                    0x100
+                } else {
+                    0x0
+                };
+                let chunk = pattern.chunks(0x10).nth(offset + index).unwrap();
+                chunk.iter().all(|b| *b == 0)
+            }
+            && !{
+                let name_table = match self.registers.ppu_ctrl.name_table {
+                    0x00 => &self.name_table0,
+                    0x01 => &self.name_table1,
+                    0x02 => &self.name_table2,
+                    0x03 => &self.name_table3,
+                    _ => unreachable!(),
+                };
+                name_table.0.iter().flatten().all(|&index| {
+                    let offset = if self.registers.ppu_ctrl.sprite_1000 {
+                        0x100
+                    } else {
+                        0x0
+                    };
+                    let chunk = pattern.chunks(0x10).nth(offset + index as usize).unwrap();
+                    chunk.iter().all(|b| *b == 0)
+                })
+            }
     }
 
     pub fn render_line(&mut self, line: u8, rom: &Rom) {

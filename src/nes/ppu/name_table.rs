@@ -1,5 +1,5 @@
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct NameTable([[u8; 32]; 30]);
+pub struct NameTable(pub(super) [[u8; 32]; 30]);
 
 impl Default for NameTable {
     fn default() -> Self {
