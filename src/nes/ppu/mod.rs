@@ -1,19 +1,18 @@
-mod attr_table;
 mod bus;
-mod name_table;
 mod pallete;
 mod registers;
 mod sprite;
+mod table;
 
 use crate::nes::Rom;
 pub use registers::Registers;
 pub use sprite::ObjectAttributeMemory;
+pub use table::Mirroring;
 
-use attr_table::AttrTable;
 use bus::PpuBus;
-use name_table::NameTable;
 use pallete::Pallete;
 use sprite::Sprite;
+use table::Table;
 
 use once_cell::sync::Lazy;
 use picto::color::Rgb;
@@ -100,14 +99,7 @@ pub struct Ppu {
     lines: u16,
     ppu_addr: u16,
     ppu_addr_tmp: Option<u8>,
-    name_table0: NameTable,
-    attr_table0: AttrTable,
-    name_table1: NameTable,
-    attr_table1: AttrTable,
-    name_table2: NameTable,
-    attr_table2: AttrTable,
-    name_table3: NameTable,
-    attr_table3: AttrTable,
+    table: Table,
     pallete: Pallete,
 }
 
@@ -127,14 +119,7 @@ impl Ppu {
             lines: 0,
             ppu_addr: 0,
             ppu_addr_tmp: None,
-            name_table0: NameTable::default(),
-            attr_table0: AttrTable::default(),
-            name_table1: NameTable::default(),
-            attr_table1: AttrTable::default(),
-            name_table2: NameTable::default(),
-            attr_table2: AttrTable::default(),
-            name_table3: NameTable::default(),
-            attr_table3: AttrTable::default(),
+            table: Table::new(rom.mirroring),
             pallete: Pallete::default(),
         }
     }
@@ -193,14 +178,10 @@ impl Ppu {
                 chunk.iter().all(|b| *b == 0)
             }
             && !{
-                let name_table = match self.registers.ppu_ctrl.name_table {
-                    0x00 => &self.name_table0,
-                    0x01 => &self.name_table1,
-                    0x02 => &self.name_table2,
-                    0x03 => &self.name_table3,
-                    _ => unreachable!(),
-                };
-                name_table.0.iter().flatten().all(|&index| {
+                let name_table = self
+                    .table
+                    .get_background(self.registers.ppu_ctrl.name_table);
+                name_table.iter().flatten().all(|&index| {
                     let offset = if self.registers.ppu_ctrl.sprite_1000 {
                         0x100
                     } else {
@@ -246,16 +227,10 @@ impl Ppu {
             if x == 0 && !self.registers.ppu_mask.show_left_bg {
                 continue;
             }
-            let (name_table, attr_table) = match self.registers.ppu_ctrl.name_table {
-                0x00 => (&self.name_table0, &self.attr_table0),
-                0x01 => (&self.name_table1, &self.attr_table1),
-                0x02 => (&self.name_table2, &self.attr_table2),
-                0x03 => (&self.name_table3, &self.attr_table3),
-                _ => unreachable!(),
-            };
+            let base_table = self.registers.ppu_ctrl.name_table;
             let line_div = line / 8;
             let line_mod = line % 8;
-            let index = name_table.get_byte(x, line_div);
+            let index = self.table.get_character_id(base_table, x, line_div);
             let offset = if self.registers.ppu_ctrl.bg_1000 {
                 0x100
             } else {
@@ -264,7 +239,7 @@ impl Ppu {
             let index = index as usize + offset;
             let mut byte1 = pattern[index * 0x10 + line_mod as usize];
             let mut byte2 = pattern[index * 0x10 + line_mod as usize + 8];
-            let pallete_id = attr_table.get_pallete_id(x, line / 8);
+            let pallete_id = self.table.get_pallete_id(base_table, x, line_div);
             let pallete = self.pallete.get_bg_pallete(pallete_id);
             for i in (0..8).rev() {
                 let bit1 = byte1 % 2;

@@ -1,17 +1,11 @@
 use std::{error::Error, fmt, fs::File, io::Read, path::Path};
+use super::ppu::Mirroring;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Rom {
     pub prg_rom: Vec<u8>,
     pub chr_rom: Vec<u8>,
     pub mirroring: Mirroring,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Mirroring {
-    None,
-    Horizontal,
-    Vertical,
 }
 
 impl Rom {
