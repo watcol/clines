@@ -697,8 +697,6 @@ dependencies = [
  "itoa",
  "log",
  "minifb",
- "once_cell",
- "picto",
  "sixel",
  "spin_sleep",
 ]
