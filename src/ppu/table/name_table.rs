@@ -9,7 +9,7 @@ impl Default for NameTable {
 
 impl NameTable {
     pub fn get_byte(&self, x: u8, y: u8) -> u8 {
-        self.0[y as usize][x as usize]
+        self.0[(y / 8) as usize][(x / 8) as usize]
     }
 
     fn set_byte(&mut self, x: u8, y: u8, value: u8) {

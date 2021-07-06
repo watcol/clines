@@ -87,6 +87,12 @@ impl<'a> PpuBus<'a> {
             }
         }
 
+        self.table.sync(
+            self.registers.ppu_ctrl.name_table,
+            self.registers.ppu_scroll.x,
+            self.registers.ppu_scroll.y,
+        );
+
         let offset = if self.registers.ppu_ctrl.ppu_mem_32 {
             0x20
         } else {

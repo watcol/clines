@@ -104,11 +104,9 @@ impl Ppu {
                 let chunk = pattern.chunks(0x10).nth(offset + index).unwrap();
                 chunk.iter().all(|b| *b == 0)
             }
-            && !{
-                let name_table = self
-                    .table
-                    .get_background(self.registers.ppu_ctrl.name_table);
-                name_table.iter().flatten().all(|&index| {
+            && !(0..=255).all(|i| {
+                (0..=239).all(|j| {
+                    let index = self.table.get_pallete_id(i, j);
                     let offset = if self.registers.ppu_ctrl.sprite_1000 {
                         0x100
                     } else {
@@ -117,7 +115,7 @@ impl Ppu {
                     let chunk = pattern.chunks(0x10).nth(offset + index as usize).unwrap();
                     chunk.iter().all(|b| *b == 0)
                 })
-            }
+            })
     }
 
     pub fn render_line(&mut self, line: u8, rom: &Rom) {
@@ -153,10 +151,8 @@ impl Ppu {
             if x == 0 && !self.registers.ppu_mask.show_left_bg {
                 continue;
             }
-            let base_table = self.registers.ppu_ctrl.name_table;
-            let line_div = line / 8;
             let line_mod = line % 8;
-            let index = self.table.get_character_id(base_table, x, line_div);
+            let index = self.table.get_character_id(x * 8, line);
             let offset = if self.registers.ppu_ctrl.bg_1000 {
                 0x100
             } else {
@@ -165,7 +161,7 @@ impl Ppu {
             let index = index as usize + offset;
             let mut byte1 = pattern[index * 0x10 + line_mod as usize];
             let mut byte2 = pattern[index * 0x10 + line_mod as usize + 8];
-            let pallete_id = self.table.get_pallete_id(base_table, x, line_div);
+            let pallete_id = self.table.get_pallete_id(x * 8, line);
             let pallete = self.pallete.get_bg_pallete(pallete_id);
             for i in (0..8).rev() {
                 let bit1 = byte1 % 2;

@@ -17,8 +17,8 @@ impl AttrTable {
     }
 
     pub fn get_pallete_id(&self, x: u8, y: u8) -> u8 {
-        let x = x / 2;
-        let y = y / 2;
+        let x = x / 16;
+        let y = y / 16;
         let right = x % 2;
         let x = x / 2;
         let bottom = y % 2;

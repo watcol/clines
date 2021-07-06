@@ -10,8 +10,8 @@ use name_table::NameTable;
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Table {
     mirroring: Mirroring,
-    offset_x: u8,
-    offset_y: u8,
+    scroll_x: u16,
+    scroll_y: u16,
     name_tables: [NameTable; 4],
     attr_tables: [AttrTable; 4],
 }
@@ -52,15 +52,39 @@ impl Table {
         }
     }
 
-    pub fn get_background(&self, base_table: u8) -> &[[u8; 32]; 30] {
-        &self.name_tables[self.mirroring.mirror(base_table)].0
+    pub fn sync(&mut self, base_table: u8, x: u8, y: u8) {
+        let (offset_x, offset_y) = match base_table {
+            0 => (0, 0),
+            1 => (256, 0),
+            2 => (0, 240),
+            3 => (256, 240),
+            _ => unreachable!(),
+        };
+        self.scroll_x = offset_x + x as u16;
+        self.scroll_y = offset_y + y as u16;
     }
 
-    pub fn get_character_id(&self, base_table: u8, x: u8, y: u8) -> u8 {
+    fn position(&self, x: u8, y: u8) -> (u8, u8, u8) {
+        let x = (self.scroll_x + x as u16) % 512;
+        let y = (self.scroll_y + y as u16) % 480;
+        let right = x >= 256;
+        let bottom = y >= 240;
+        let table = match (right, bottom) {
+            (false, false) => 0,
+            (true, false) => 1,
+            (false, true) => 2,
+            (true, true) => 3,
+        };
+        (table, (x % 256) as u8, (y % 240) as u8)
+    }
+
+    pub fn get_character_id(&self, x: u8, y: u8) -> u8 {
+        let (base_table, x, y) = self.position(x, y);
         self.name_tables[self.mirroring.mirror(base_table)].get_byte(x, y)
     }
 
-    pub fn get_pallete_id(&self, base_table: u8, x: u8, y: u8) -> u8 {
+    pub fn get_pallete_id(&self, x: u8, y: u8) -> u8 {
+        let (base_table, x, y) = self.position(x, y);
         self.attr_tables[self.mirroring.mirror(base_table)].get_pallete_id(x, y)
     }
 }
