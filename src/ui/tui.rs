@@ -2,7 +2,9 @@ use std::fs::File;
 use std::io::{self, stderr, Write};
 use std::os::unix::io::{AsRawFd, FromRawFd};
 
-use super::{Button, Display, Ui};
+use super::Ui;
+use crate::display::Display;
+use crate::pad::Button;
 use crossterm::{
     event::{poll, read},
     terminal::{disable_raw_mode, enable_raw_mode, size},
@@ -72,10 +74,8 @@ impl Tui {
 impl Ui for Tui {
     fn flush(&mut self, display: &Display) -> anyhow::Result<()> {
         let (winwidth, winheight) = size()?;
-        let width = display.width();
-        let height = display.height();
-        let width16 = width as u16;
-        let height16 = (height / 2) as u16;
+        let width16 = Display::WIDTH as u16;
+        let height16 = (Display::HEIGHT / 2) as u16;
         let initial_width = if winwidth > width16 {
             (winwidth - width16) / 2
         } else {
@@ -95,8 +95,8 @@ impl Ui for Tui {
         self.buf.push(b';');
         self.buf.push_int(initial_width)?;
         self.buf.push(b'H');
-        for y in 0..(height / 2) {
-            for x in 0..width {
+        for y in 0..(Display::HEIGHT as u8 / 2) {
+            for x in 0..Display::WIDTH as u8 {
                 let px1 = display.get(x, y * 2);
                 let px2 = display.get(x, y * 2 + 1);
                 if bg_color != Some(px1) {
@@ -110,11 +110,11 @@ impl Ui for Tui {
                     //     })
                     // )?;
                     self.buf.extend(b"\x1b[48;2;");
-                    self.buf.push_int((px1.red * 255.0) as u8)?;
+                    self.buf.push_int(px1.0 as u8)?;
                     self.buf.push(b';');
-                    self.buf.push_int((px1.green * 255.0) as u8)?;
+                    self.buf.push_int(px1.1 as u8)?;
                     self.buf.push(b';');
-                    self.buf.push_int((px1.blue * 255.0) as u8)?;
+                    self.buf.push_int(px1.2 as u8)?;
                     self.buf.push(b'm');
                 }
 
@@ -129,11 +129,11 @@ impl Ui for Tui {
                     //     })
                     // )?;
                     self.buf.extend(b"\x1b[38;2;");
-                    self.buf.push_int((px2.red * 255.0) as u8)?;
+                    self.buf.push_int(px2.0 as u8)?;
                     self.buf.push(b';');
-                    self.buf.push_int((px2.green * 255.0) as u8)?;
+                    self.buf.push_int(px2.1 as u8)?;
                     self.buf.push(b';');
-                    self.buf.push_int((px2.blue * 255.0) as u8)?;
+                    self.buf.push_int(px2.2 as u8)?;
                     self.buf.push(b'm');
                 }
                 if bg_color == fg_color {

@@ -1,22 +1,18 @@
-use super::{Button, Display, Ui};
+use super::Ui;
+use crate::display::Display;
+use crate::pad::Button;
 use minifb::{Key, Scale, ScaleMode, Window, WindowOptions};
-use picto::color::Rgb;
 
 pub struct Gui {
     win: Window,
-}
-
-fn rgb2u32(rgb: Rgb) -> u32 {
-    let Rgb { red, green, blue } = rgb;
-    ((red * 255.0) as u32) << 16 | ((green * 255.0) as u32) << 8 | ((blue * 255.0) as u32)
 }
 
 impl Gui {
     pub fn new() -> anyhow::Result<Self> {
         let win = Window::new(
             "NES",
-            256,
-            240,
+            Display::WIDTH,
+            Display::HEIGHT,
             WindowOptions {
                 resize: true,
                 scale: Scale::FitScreen,
@@ -32,13 +28,10 @@ impl Ui for Gui {
     fn flush(&mut self, display: &Display) -> anyhow::Result<()> {
         let buffer = display
             .pixels()
-            .map(|(_, _, rgb)| rgb2u32(rgb.get()))
+            .map(|(_, _, rgb)| rgb.as_u32())
             .collect::<Vec<_>>();
-        self.win.update_with_buffer(
-            &buffer,
-            display.width() as usize,
-            display.height() as usize,
-        )?;
+        self.win
+            .update_with_buffer(&buffer, Display::WIDTH, Display::HEIGHT)?;
         Ok(())
     }
 

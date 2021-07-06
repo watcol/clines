@@ -2,6 +2,7 @@
 extern crate log;
 
 mod cpu;
+mod display;
 mod pad;
 mod ppu;
 mod rom;
