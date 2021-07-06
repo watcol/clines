@@ -1,5 +1,4 @@
-use super::Ui;
-use crate::nes::{Button, Display};
+use super::{Button, Display, Ui};
 use minifb::{Key, Scale, ScaleMode, Window, WindowOptions};
 use picto::color::Rgb;
 

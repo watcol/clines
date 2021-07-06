@@ -1,5 +1,5 @@
 use super::{Pallete, Ppu, Registers, Table};
-use crate::nes::Rom;
+use crate::Rom;
 
 pub struct PpuBus<'a> {
     pub registers: &'a mut Registers,

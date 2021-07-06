@@ -1,19 +1,23 @@
+#[macro_use]
+extern crate log;
+
 mod cpu;
 mod pad;
 mod ppu;
 mod rom;
+mod ui;
 
-pub use pad::Button;
-pub use ppu::Display;
+pub use ui::{Gui, Tui};
 
-use crate::ui::Ui;
-use cpu::Cpu;
-use pad::Pad;
-use ppu::Ppu;
-use rom::Rom;
 use std::path::Path;
 use std::sync::mpsc::{channel, TryRecvError};
 use std::thread;
+
+use cpu::Cpu;
+use pad::{Button, Pad};
+use ppu::Ppu;
+use rom::Rom;
+use ui::Ui;
 
 #[derive(Clone, Debug)]
 pub struct Nes<U> {

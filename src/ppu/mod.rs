@@ -4,7 +4,7 @@ mod registers;
 mod sprite;
 mod table;
 
-use crate::nes::Rom;
+use crate::Rom;
 pub use registers::Registers;
 pub use sprite::ObjectAttributeMemory;
 pub use table::Mirroring;

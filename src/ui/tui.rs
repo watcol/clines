@@ -2,8 +2,7 @@ use std::fs::File;
 use std::io::{self, stderr, Write};
 use std::os::unix::io::{AsRawFd, FromRawFd};
 
-use super::Ui;
-use crate::nes::{Button, Display};
+use super::{Button, Display, Ui};
 use crossterm::{
     event::{poll, read},
     terminal::{disable_raw_mode, enable_raw_mode, size},

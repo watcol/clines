@@ -1,5 +1,5 @@
 use super::Registers;
-use crate::nes::{
+use crate::{
     ppu::{ObjectAttributeMemory, Registers as PpuRegisters},
     Cpu, Pad, Ppu, Rom, Ui,
 };

@@ -4,7 +4,8 @@ mod tui;
 pub use gui::Gui;
 pub use tui::Tui;
 
-use crate::nes::{Button, Display};
+use super::pad::Button;
+use super::ppu::Display;
 
 pub trait Ui {
     fn flush(&mut self, image: &Display) -> anyhow::Result<()>;
