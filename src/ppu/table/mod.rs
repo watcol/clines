@@ -4,14 +4,23 @@ mod name_table;
 
 pub use mirroring::Mirroring;
 
+use super::{RegisterIO, Registers};
 use attr_table::AttrTable;
 use name_table::NameTable;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Table {
     mirroring: Mirroring,
-    scroll_x: u16,
-    scroll_y: u16,
+    w: bool,
+    fine_x: u8,
+    v_fine_y: u8,
+    t_fine_y: u8,
+    v_table: u8,
+    v_x: u8,
+    v_y: u8,
+    t_table: u8,
+    t_x: u8,
+    t_y: u8,
     name_tables: [NameTable; 4],
     attr_tables: [AttrTable; 4],
 }
@@ -52,21 +61,64 @@ impl Table {
         }
     }
 
-    pub fn sync(&mut self, base_table: u8, x: u8, y: u8) {
-        let (offset_x, offset_y) = match base_table {
+    pub fn sync_register(&mut self, registers: &Registers) {
+        match registers.io {
+            RegisterIO::WritePpuCtrl => {
+                self.t_table = registers.ppu_ctrl.name_table;
+            }
+            RegisterIO::ReadPpuStatus => {
+                self.w = false;
+            }
+            RegisterIO::WritePpuScroll if !self.w => {
+                self.t_x = registers.ppu_scroll / 8;
+                self.fine_x = registers.ppu_scroll % 8;
+                self.w = true;
+            }
+            RegisterIO::WritePpuScroll => {
+                self.t_y = registers.ppu_scroll / 8;
+                self.t_fine_y = registers.ppu_scroll % 8;
+                self.w = false;
+            }
+            RegisterIO::WritePpuAddr if !self.w => {
+                self.t_fine_y = (registers.ppu_addr & 0x30) / 0x10;
+                self.t_table = (registers.ppu_addr & 0x0c) / 0x04;
+                self.t_y = (registers.ppu_addr & 0x03) * 0x08 + (self.t_y & 0x07);
+                self.w = true;
+            }
+            RegisterIO::WritePpuAddr => {
+                self.t_y = (self.t_y & 0x18) + ((registers.ppu_addr & 0xe0) / 0x20);
+                self.t_x = registers.ppu_addr & 0x1f;
+                self.v_fine_y = self.t_fine_y;
+                self.v_table = self.t_table;
+                self.v_y = self.t_y;
+                self.v_x = self.t_x;
+                self.w = false;
+            }
+            _ => {}
+        }
+    }
+
+    pub fn sync_line(&mut self, line: u16) {
+        if line == 0 {
+            self.v_table = self.t_table;
+            self.v_fine_y = self.t_fine_y;
+            self.v_y = self.t_y;
+        } else {
+            self.v_table = (self.v_table & 0x02) + (self.t_table & 0x01);
+        }
+        self.v_x = self.t_x;
+    }
+
+    fn position(&self, x: u8, y: u8) -> (u8, u8, u8) {
+        let (offset_x, offset_y) = match self.v_table {
             0 => (0, 0),
             1 => (256, 0),
             2 => (0, 240),
             3 => (256, 240),
             _ => unreachable!(),
         };
-        self.scroll_x = offset_x + x as u16;
-        self.scroll_y = offset_y + y as u16;
-    }
-
-    fn position(&self, x: u8, y: u8) -> (u8, u8, u8) {
-        let x = (self.scroll_x + x as u16) % 512;
-        let y = (self.scroll_y + y as u16) % 480;
+        let x = (offset_x + self.v_x as u16 * 8 + self.fine_x as u16 + x as u16) % 512;
+        let y = (offset_y + self.v_y as u16 * 8 + self.v_fine_y as u16 + y as u16) % 480;
         let right = x >= 256;
         let bottom = y >= 240;
         let table = match (right, bottom) {
@@ -76,6 +128,11 @@ impl Table {
             (true, true) => 3,
         };
         (table, (x % 256) as u8, (y % 240) as u8)
+    }
+
+    pub fn pixel_position(&self, x: u8, y: u8) -> (u8, u8) {
+        let (_, x, y) = self.position(x, y);
+        (x % 8, y % 8)
     }
 
     pub fn get_character_id(&self, x: u8, y: u8) -> u8 {

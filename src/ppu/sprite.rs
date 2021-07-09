@@ -1,4 +1,4 @@
-use super::Registers;
+use super::{RegisterIO, Registers};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ObjectAttributeMemory(pub [Sprite; 64]);
@@ -19,16 +19,16 @@ impl ObjectAttributeMemory {
     }
 
     pub fn sync_registers(&mut self, reg: &mut Registers) {
-        if reg.oam_addr_writed {
-            reg.oam_addr_writed = false;
-            reg.oam_data = self.read(reg.oam_addr);
-        }
-
-        if reg.oam_data_writed {
-            reg.oam_data_writed = false;
-            self.write(reg.oam_addr, reg.oam_data);
-            reg.oam_addr += 1;
-            reg.oam_data = self.read(reg.oam_addr);
+        match reg.io {
+            RegisterIO::WriteOamAddr => {
+                reg.oam_data = self.read(reg.oam_addr);
+            }
+            RegisterIO::WriteOamData => {
+                self.write(reg.oam_addr, reg.oam_data);
+                reg.oam_addr += 1;
+                reg.oam_data = self.read(reg.oam_addr);
+            }
+            _ => {}
         }
     }
 }
@@ -68,7 +68,7 @@ pub struct SpriteAttribute {
     pub vertical_flip: bool,
     pub horizontal_flip: bool,
     pub hide: bool,
-    pub pallete: u8,
+    pub palette: u8,
 }
 
 impl Default for SpriteAttribute {
@@ -77,7 +77,7 @@ impl Default for SpriteAttribute {
             vertical_flip: false,
             horizontal_flip: false,
             hide: true,
-            pallete: 0,
+            palette: 0,
         }
     }
 }
@@ -88,7 +88,7 @@ impl SpriteAttribute {
             vertical_flip: bits & 0x80 == 0x80,
             horizontal_flip: bits & 0x40 == 0x40,
             hide: bits & 0x20 == 0x20,
-            pallete: bits & 0x3,
+            palette: bits & 0x3,
         }
     }
 
@@ -96,6 +96,6 @@ impl SpriteAttribute {
         (self.vertical_flip as u8) * 0x80
             + (self.horizontal_flip as u8) * 0x40
             + (self.hide as u8) * 0x20
-            + self.pallete
+            + self.palette
     }
 }

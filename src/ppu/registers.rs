@@ -3,16 +3,34 @@ pub struct Registers {
     pub(super) ppu_ctrl: PpuCtrl,
     pub(super) ppu_mask: PpuMask,
     pub(super) ppu_status: PpuStatus,
+    pub(super) ppu_status_read: bool,
     pub(super) oam_addr: u8,
-    pub(super) oam_addr_writed: bool,
     pub(super) oam_data: u8,
-    pub(super) oam_data_writed: bool,
-    pub(super) ppu_scroll: PpuScroll,
+    pub(super) ppu_scroll: u8,
     pub(super) ppu_addr: u8,
-    pub(super) ppu_addr_writed: bool,
     pub(super) ppu_data: u8,
-    pub(super) ppu_data_writed: bool,
-    pub(super) ppu_data_readed: bool,
+    pub(super) io: RegisterIO,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum RegisterIO {
+    None,
+    WritePpuCtrl,
+    WritePpuMask,
+    ReadPpuStatus,
+    WriteOamAddr,
+    ReadOamData,
+    WriteOamData,
+    WritePpuScroll,
+    WritePpuAddr,
+    ReadPpuData,
+    WritePpuData,
+}
+
+impl Default for RegisterIO {
+    fn default() -> Self {
+        Self::None
+    }
 }
 
 impl Registers {
@@ -27,6 +45,7 @@ impl Registers {
                 0
             }
             0x2 => {
+                self.io = RegisterIO::ReadPpuStatus;
                 let res = self.ppu_status.as_u8();
                 self.ppu_status.vblank = false;
                 res
@@ -35,7 +54,10 @@ impl Registers {
                 warn!("Reading to OAMADDR is not allowed.");
                 0
             }
-            0x4 => self.oam_data,
+            0x4 => {
+                self.io = RegisterIO::ReadOamData;
+                self.oam_data
+            }
             0x5 => {
                 warn!("Reading to PPUSCROLL is not allowed.");
                 0
@@ -45,7 +67,7 @@ impl Registers {
                 0
             }
             0x7 => {
-                self.ppu_data_readed = true;
+                self.io = RegisterIO::ReadPpuData;
                 self.ppu_data
             }
             _ => unreachable!(),
@@ -54,24 +76,33 @@ impl Registers {
 
     pub fn write(&mut self, addr: u16, value: u8) {
         match addr % 0x8 {
-            0x0 => self.ppu_ctrl = PpuCtrl::from_u8(value),
-            0x1 => self.ppu_mask = PpuMask::from_u8(value),
+            0x0 => {
+                self.io = RegisterIO::WritePpuCtrl;
+                self.ppu_ctrl = PpuCtrl::from_u8(value);
+            }
+            0x1 => {
+                self.io = RegisterIO::WritePpuMask;
+                self.ppu_mask = PpuMask::from_u8(value);
+            }
             0x2 => warn!("Writing to PPUSTATUS is not allowed."),
             0x3 => {
-                self.oam_addr_writed = true;
+                self.io = RegisterIO::WriteOamAddr;
                 self.oam_addr = value;
             }
             0x4 => {
-                self.oam_data_writed = true;
+                self.io = RegisterIO::WriteOamData;
                 self.oam_data = value;
             }
-            0x5 => self.ppu_scroll.write(value),
+            0x5 => {
+                self.io = RegisterIO::WritePpuScroll;
+                self.ppu_scroll = value;
+            }
             0x6 => {
-                self.ppu_addr_writed = true;
+                self.io = RegisterIO::WritePpuAddr;
                 self.ppu_addr = value;
             }
             0x7 => {
-                self.ppu_data_writed = true;
+                self.io = RegisterIO::WritePpuData;
                 self.ppu_data = value;
             }
             _ => unreachable!(),
@@ -155,24 +186,5 @@ pub struct PpuStatus {
 impl PpuStatus {
     pub fn as_u8(&self) -> u8 {
         self.vblank as u8 * 0x80 + self.sprite_hit as u8 * 0x40 + self.sprite_overflow as u8 * 0x20
-    }
-}
-
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
-pub struct PpuScroll {
-    pub is_y: bool,
-    pub x: u8,
-    pub y: u8,
-}
-
-impl PpuScroll {
-    pub fn write(&mut self, value: u8) {
-        if self.is_y {
-            self.y = value;
-            self.is_y = false;
-        } else {
-            self.x = value;
-            self.is_y = true;
-        }
     }
 }
